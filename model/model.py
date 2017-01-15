@@ -14,8 +14,8 @@ class Model(object):
 
     def contrast(self):
         rpy2.robjects.numpy2ri.activate()
-        robjects.r['source']('R_functions.R')
-        adjustContrast = robjects.r['adjustContrast']
+        #robjects.r['source']('R_functions.R')
+        #adjustContrast = robjects.r['adjustContrast']
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         self.img = clahe.apply(self.img)
 

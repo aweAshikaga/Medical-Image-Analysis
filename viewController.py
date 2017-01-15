@@ -20,12 +20,13 @@ class ViewController(mainUi.Ui_MainWindow):
         self.setImage()
 
     def openFile(self):
-        filename = QFileDialog.getOpenFileName(self, None, '', '*.jpg')[0]
+        filename = QFileDialog.getOpenFileName(self.window, 'Open file', '/home')[0]
+        #fn = QFileDialog.get
 
         if filename:
             self.model.setImage(filename)
             #self.lblImgDisplay.setPixmap(QPixmap(filename))
-            self.setImage()
+            #self.setImage()
 
     def setImage(self):
         img = self.model.getImage()
