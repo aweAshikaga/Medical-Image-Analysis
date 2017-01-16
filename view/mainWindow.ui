@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>596</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
      <widget class="QScrollArea" name="saImgDisplay">
       <property name="widgetResizable">
@@ -25,20 +25,70 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>780</width>
-         <height>539</height>
+         <width>696</width>
+         <height>501</height>
         </rect>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QLabel" name="lblImgDisplay">
           <property name="text">
            <string/>
           </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
          </widget>
         </item>
        </layout>
       </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="groupBoxInfo">
+      <property name="maximumSize">
+       <size>
+        <width>150</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Information</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="lblImageSize">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Image size</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblZoomFactor">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Zoom factor</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
    </layout>
@@ -86,20 +136,33 @@
     <addaction name="actionFiber_diameter"/>
     <addaction name="actionFiber_orientation"/>
    </widget>
-   <widget class="QMenu" name="menuTest1">
-    <property name="title">
-     <string>Test1</string>
-    </property>
-    <addaction name="actionTest2"/>
-   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuProcessing"/>
    <addaction name="menuAnalysis"/>
-   <addaction name="menuTest1"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionOpen"/>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
+   <addaction name="actionZoom_in"/>
+   <addaction name="actionZoom_out"/>
+  </widget>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/icons/view/res/icons/document-open.ico</normaloff>:/icons/view/res/icons/document-open.ico</iconset>
+   </property>
    <property name="text">
     <string>Open</string>
    </property>
@@ -115,21 +178,37 @@
    </property>
   </action>
   <action name="actionUndo">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/icons/view/res/icons/edit-undo.ico</normaloff>:/icons/view/res/icons/edit-undo.ico</iconset>
+   </property>
    <property name="text">
     <string>Undo</string>
    </property>
   </action>
   <action name="actionRedo">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/icons/view/res/icons/edit-redo.ico</normaloff>:/icons/view/res/icons/edit-redo.ico</iconset>
+   </property>
    <property name="text">
     <string>Redo</string>
    </property>
   </action>
   <action name="actionZoom_in">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/icons/view/res/icons/zoom-in.ico</normaloff>:/icons/view/res/icons/zoom-in.ico</iconset>
+   </property>
    <property name="text">
     <string>Zoom in</string>
    </property>
   </action>
   <action name="actionZoom_out">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/icons/view/res/icons/zoom-out.ico</normaloff>:/icons/view/res/icons/zoom-out.ico</iconset>
+   </property>
    <property name="text">
     <string>Zoom out</string>
    </property>
@@ -175,6 +254,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

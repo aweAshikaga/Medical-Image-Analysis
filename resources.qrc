@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>view/res/icons/document-open.ico</file>
+    <file>view/res/icons/edit-redo.ico</file>
+    <file>view/res/icons/edit-undo.ico</file>
+    <file>view/res/icons/icons.qrc</file>
+    <file>view/res/icons/zoom-in.ico</file>
+    <file>view/res/icons/zoom-original.ico</file>
+    <file>view/res/icons/zoom-out.ico</file>
+  </qresource>
+</RCC>
