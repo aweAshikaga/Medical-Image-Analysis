@@ -2,6 +2,7 @@ import numpy as np
 import rpy2.robjects as robjects
 import rpy2.robjects.numpy2ri
 import cv2
+import collections
 
 
 class Observable(object):
@@ -24,11 +25,55 @@ class Observable(object):
         for observer in self.observers:
             observer.update(*args, **kwargs)
 
+
+class History(object):
+    """ The History class provides the possibility to keep track of changes that were done
+        to a variable and move backwards and forward between these changes.
+    """
+
+    def __init__(self):
+        # undo-stack
+        self.undo = collections.deque()
+        # redo-stack
+        self.redo = collections.deque()
+
+    def goBackwards(self, currentValue):
+        """ Returns and pops the last saved value of the undo-stack and stores the current value on the redo-stack.
+        """
+        if len(self.undo) >= 1:
+            self.redo.append(currentValue)
+            return self.undo.pop()
+        else:
+            return currentValue
+
+    def goForward(self, currentValue):
+        """ Returns and pops the last value of the redo-stack and stores the current value one the undo-stack.
+        """
+        print(self.redo)
+        if len(self.redo) > 0:
+            self.undo.append(currentValue)
+            return self.redo.pop()
+        else:
+            return currentValue
+
+
 class Image(Observable):
     def __init__(self):
         Observable.__init__(self)
-        self.img = np.zeros((1, 1), np.uint8)
+        self._img = None
         self._zoomFactor = 1
+        self.imgHistory = History()
+
+    @property
+    def img(self):
+        return self._img
+
+    @img.setter
+    def img(self, value):
+        if self.img is not None:
+            self.imgHistory.undo.append(self.img)
+
+        self._img = value
 
     @property
     def zoomFactor(self):
@@ -41,6 +86,14 @@ class Image(Observable):
             self.update_observers()
         else:
             self._zoomFactor = 0.25
+
+    def undo(self):
+        self._img = self.imgHistory.goBackwards(self.img)
+        self.update_observers()
+
+    def redo(self):
+        self._img = self.imgHistory.goForward(self.img)
+        self.update_observers()
 
     def openFile(self, filename):
         self.img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
@@ -59,9 +112,12 @@ class Image(Observable):
         print(self.img)
 
     def getImageDimensions(self):
-        return self.img.shape
+        if self.img is not None:
+            return self.img.shape
+        else:
+            return 0, 0
 
-    def getImage(self, zoomFactor=1):
+    def getZoomedImage(self):
         if self._zoomFactor == 1:
             return self.img
         elif self._zoomFactor > 1:
