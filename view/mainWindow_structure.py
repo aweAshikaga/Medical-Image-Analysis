@@ -16,11 +16,16 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.centralwidget)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.tabBar = QTabBar(self.centralwidget)
+        self.tabBar.setObjectName("tabBar")
+        self.verticalLayout_2.addWidget(self.tabBar)
         self.saImgDisplay = QtWidgets.QScrollArea(self.centralwidget)
         self.saImgDisplay.setWidgetResizable(True)
         self.saImgDisplay.setObjectName("saImgDisplay")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 696, 501))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 694, 483))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.scrollAreaWidgetContents)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
@@ -31,7 +36,8 @@ class Ui_MainWindow(object):
         self.lblImgDisplay.setObjectName("lblImgDisplay")
         self.horizontalLayout.addWidget(self.lblImgDisplay)
         self.saImgDisplay.setWidget(self.scrollAreaWidgetContents)
-        self.horizontalLayout_2.addWidget(self.saImgDisplay)
+        self.verticalLayout_2.addWidget(self.saImgDisplay)
+        self.horizontalLayout_2.addLayout(self.verticalLayout_2)
         self.groupBoxInfo = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBoxInfo.setMaximumSize(QtCore.QSize(150, 16777215))
         self.groupBoxInfo.setObjectName("groupBoxInfo")
@@ -174,4 +180,5 @@ class Ui_MainWindow(object):
         self.actionFiber_orientation.setText(_translate("MainWindow", "Fiber orientation"))
         self.actionTest2.setText(_translate("MainWindow", "test2"))
 
+from PyQt5.QtWidgets import QTabBar
 import resources_rc

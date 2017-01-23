@@ -21,9 +21,9 @@ class Observable(object):
         if self.observers:
             del self.observers[:]
 
-    def update_observers(self, *args, **kwargs):
+    def update_observers(self, sender, *args, **kwargs):
         for observer in self.observers:
-            observer.update(*args, **kwargs)
+            observer.update(sender, *args, **kwargs)
 
 
 class History(object):
@@ -49,7 +49,6 @@ class History(object):
     def goForward(self, currentValue):
         """ Returns and pops the last value of the redo-stack and stores the current value one the undo-stack.
         """
-        print(self.redo)
         if len(self.redo) > 0:
             self.undo.append(currentValue)
             return self.redo.pop()
@@ -82,34 +81,38 @@ class Image(Observable):
     @zoomFactor.setter
     def zoomFactor(self, newValue):
         if newValue > 0:
-            self._zoomFactor = newValue
-            self.update_observers()
+            if newValue <= 3:
+                self._zoomFactor = newValue
+            else:
+                self._zoomFactor = 3
         else:
             self._zoomFactor = 0.25
 
+        self.update_observers(self)
+
     def undo(self):
         self._img = self.imgHistory.goBackwards(self.img)
-        self.update_observers()
+        self.update_observers(self)
 
     def redo(self):
         self._img = self.imgHistory.goForward(self.img)
-        self.update_observers()
+        self.update_observers(self)
 
     def openFile(self, filename):
         self.img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
         self._zoomFactor = 1
-        self.update_observers()
+        self.update_observers(self)
 
-    def addContrast(self):
-        rpy2.robjects.numpy2ri.activate()
+    def addContrastCLAHE(self):
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(5, 5))
         self.img = clahe.apply(self.img)
-        self.update_observers()
+        self.update_observers(self)
+        self.imgHistory.redo.clear()
 
-    def addContrast2(self, value):
-        self.img = cv2.multiply(self.img,value)
-        self.update_observers()
-        print(self.img)
+    def addContrastCustom(self, value):
+        self.img = cv2.multiply(self.img, value)
+        self.update_observers(self)
+        self.imgHistory.redo.clear()
 
     def getImageDimensions(self):
         if self.img is not None:
@@ -121,6 +124,6 @@ class Image(Observable):
         if self._zoomFactor == 1:
             return self.img
         elif self._zoomFactor > 1:
-            return cv2.resize(self.img,None,fx=self._zoomFactor,fy=self._zoomFactor, interpolation = cv2.INTER_CUBIC)
+            return cv2.resize(self.img,None,fx=self._zoomFactor,fy=self._zoomFactor, interpolation=cv2.INTER_CUBIC)
         elif 0 < self._zoomFactor < 1:
             return cv2.resize(self.img, None, fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_AREA)
