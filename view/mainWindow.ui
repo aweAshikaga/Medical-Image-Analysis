@@ -31,7 +31,7 @@
            <x>0</x>
            <y>0</y>
            <width>694</width>
-           <height>483</height>
+           <height>493</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout">
@@ -123,16 +123,24 @@
     </property>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
-    <addaction name="actionZoom_in"/>
-    <addaction name="actionZoom_out"/>
-    <addaction name="actionDefine_scale"/>
-    <addaction name="actionDefine_areas"/>
+    <addaction name="actionZoomIn"/>
+    <addaction name="actionZoomOut"/>
+    <addaction name="actionDefineScale"/>
+    <addaction name="actionDefineAreas"/>
    </widget>
    <widget class="QMenu" name="menuProcessing">
     <property name="title">
      <string>Processing</string>
     </property>
-    <addaction name="actionFilter"/>
+    <widget class="QMenu" name="menuDerivative_Filter">
+     <property name="title">
+      <string>Derivative Filter</string>
+     </property>
+     <addaction name="actionDerivativeSobel"/>
+     <addaction name="actionDerivativeLaPlace"/>
+    </widget>
+    <addaction name="actionSmoothingFilter"/>
+    <addaction name="menuDerivative_Filter"/>
     <addaction name="actionSegmentation"/>
     <addaction name="actionContrast"/>
    </widget>
@@ -140,8 +148,8 @@
     <property name="title">
      <string>Analysis</string>
     </property>
-    <addaction name="actionFiber_diameter"/>
-    <addaction name="actionFiber_orientation"/>
+    <addaction name="actionFiberDiameter"/>
+    <addaction name="actionFiberOrientation"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -162,8 +170,8 @@
    <addaction name="actionOpen"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
-   <addaction name="actionZoom_in"/>
-   <addaction name="actionZoom_out"/>
+   <addaction name="actionZoomIn"/>
+   <addaction name="actionZoomOut"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -202,7 +210,7 @@
     <string>Redo</string>
    </property>
   </action>
-  <action name="actionZoom_in">
+  <action name="actionZoomIn">
    <property name="icon">
     <iconset resource="../resources.qrc">
      <normaloff>:/icons/view/res/icons/zoom-in.ico</normaloff>:/icons/view/res/icons/zoom-in.ico</iconset>
@@ -211,7 +219,7 @@
     <string>Zoom in</string>
    </property>
   </action>
-  <action name="actionZoom_out">
+  <action name="actionZoomOut">
    <property name="icon">
     <iconset resource="../resources.qrc">
      <normaloff>:/icons/view/res/icons/zoom-out.ico</normaloff>:/icons/view/res/icons/zoom-out.ico</iconset>
@@ -220,19 +228,14 @@
     <string>Zoom out</string>
    </property>
   </action>
-  <action name="actionDefine_scale">
+  <action name="actionDefineScale">
    <property name="text">
     <string>Define scale</string>
    </property>
   </action>
-  <action name="actionDefine_areas">
+  <action name="actionDefineAreas">
    <property name="text">
     <string>Define areas</string>
-   </property>
-  </action>
-  <action name="actionFilter">
-   <property name="text">
-    <string>Filter</string>
    </property>
   </action>
   <action name="actionSegmentation">
@@ -245,19 +248,29 @@
     <string>Contrast</string>
    </property>
   </action>
-  <action name="actionFiber_diameter">
+  <action name="actionFiberDiameter">
    <property name="text">
     <string>Fiber diameter</string>
    </property>
   </action>
-  <action name="actionFiber_orientation">
+  <action name="actionFiberOrientation">
    <property name="text">
     <string>Fiber orientation</string>
    </property>
   </action>
-  <action name="actionTest2">
+  <action name="actionDerivativeSobel">
    <property name="text">
-    <string>test2</string>
+    <string>Sobel</string>
+   </property>
+  </action>
+  <action name="actionDerivativeLaPlace">
+   <property name="text">
+    <string>LaPlace</string>
+   </property>
+  </action>
+  <action name="actionSmoothingFilter">
+   <property name="text">
+    <string>Smoothing Filter</string>
    </property>
   </action>
  </widget>

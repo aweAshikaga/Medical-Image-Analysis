@@ -1,6 +1,7 @@
 from view.mainWindow_structure import Ui_MainWindow
 from view.contrastDialog_structure import Ui_ContrastDialog
-from PyQt5.QtWidgets import QMainWindow, QDialog
+from view.smoothingDialog_structure import Ui_SmoothingDialog
+from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox
 
 
 class MainWindow(Ui_MainWindow):
@@ -19,8 +20,36 @@ class MainWindow(Ui_MainWindow):
         self.tabBar.setMovable(True)
         self.tabBar.setTabsClosable(True)
 
+
 class ContrastDialog(QDialog, Ui_ContrastDialog):
     def __init__(self):
         QDialog.__init__(self)
         Ui_ContrastDialog.__init__(self)
         self.setupUi(self)
+
+
+class SmoothingDialog(QDialog, Ui_SmoothingDialog):
+    def __init__(self):
+        QDialog.__init__(self)
+        Ui_SmoothingDialog.__init__(self)
+        self.setupUi(self)
+        self.buttonBox.accepted.connect(self.acceptButtonClicked)
+        self.buttonBox.rejected.connect(self.reject)
+
+    def acceptButtonClicked(self):
+        # Check if the kernel size has a valid value
+        if (self.radioBtnMedian.isChecked() or self.radioBtnGaussian.isChecked()) and self.spinBoxKernelSize.value() % 2 == 0:
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setWindowTitle("Medical Image Analysis")
+            msgBox.setText("The kernel size for the median filter must be a positive, odd whole number")
+            msgBox.exec_()
+        elif self.spinBoxKernelSize.value() < 1:
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setWindowTitle("Medical Image Analysis")
+            msgBox.setText("The kernel size for the median filter must be a positive whole number")
+            msgBox.exec_()
+        else:
+            self.accept()
+

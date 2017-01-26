@@ -18,11 +18,15 @@ class ViewController(object):
     def connectActions(self):
         self.mainWindow.actionOpen.triggered.connect(self.openFile)
         self.mainWindow.actionContrast.triggered.connect(self.addContrast)
-        self.mainWindow.actionZoom_in.triggered.connect(self.zoomIn)
-        self.mainWindow.actionZoom_out.triggered.connect(self.zoomOut)
+        self.mainWindow.actionZoomIn.triggered.connect(self.zoomIn)
+        self.mainWindow.actionZoomOut.triggered.connect(self.zoomOut)
         self.mainWindow.actionRedo.triggered.connect(self.redo)
         self.mainWindow.actionUndo.triggered.connect(self.undo)
         self.mainWindow.tabBar.currentChanged.connect(self.update)
+        self.mainWindow.actionSmoothingFilter.triggered.connect(self.addSmoothing)
+        self.mainWindow.actionDerivativeLaPlace.triggered.connect(self.addDerivativeLaPlace)
+        self.mainWindow.actionDerivativeSobel.triggered.connect(self.addDerivateSobel)
+        self.mainWindow.actionSave.triggered.connect(self.saveImage)
 
     def redo(self):
         if self.currentImageObject:
@@ -41,6 +45,27 @@ class ViewController(object):
                     self.currentImageObject.addContrastCLAHE()
                 elif dialog.radioBtnManual.isChecked():
                     self.currentImageObject.addContrastCustom(2)
+
+    def addSmoothing(self):
+        if self.currentImageObject:
+            dialog = Ui.SmoothingDialog()
+            dialog.exec_()
+            if dialog.result() == 1:
+                kernelSize = dialog.spinBoxKernelSize.value()
+                if dialog.radioBtnAverage.isChecked():
+                    self.currentImageObject.filterSmoothingAverage((kernelSize, kernelSize))
+                elif dialog.radioBtnGaussian.isChecked():
+                    self.currentImageObject.filterSmoothingGaussian((kernelSize, kernelSize))
+                elif dialog.radioBtnMedian.isChecked():
+                    self.currentImageObject.filterSmoothingMedian(kernelSize)
+
+    def addDerivativeLaPlace(self):
+        if self.currentImageObject:
+            self.currentImageObject.derivativeLaPlace()
+
+    def addDerivateSobel(self):
+        if self.currentImageObject:
+            self.currentImageObject.derivativeSobel()
 
     def openFile(self):
         filePath = QFileDialog.getOpenFileName(self.mainWindow.window, 'Open file', '/home', '*.jpg; *.png')[0]
@@ -67,6 +92,14 @@ class ViewController(object):
             # Open the selected image and remember the reference to its image object.
             newImage.openFile(filePath)
 
+    def saveImage(self):
+        if self.currentImageObject:
+            filePath = QFileDialog.getSaveFileName(self.mainWindow.window, "Save file", "/home", ".jpg")[0]
+
+            if filePath:
+                self.currentImageObject.saveImage(filePath)
+
+
     def displayImage(self):
         if self.currentImageObject:
             img = self.currentImageObject.getZoomedImage()
@@ -84,6 +117,18 @@ class ViewController(object):
     def zoomOut(self):
         if self.currentImageObject:
             self.currentImageObject.zoomFactor -= 0.25
+
+    def filterSmoothingAverage(self):
+        if self.currentImageObject:
+            self.currentImageObject.filterSmoothingAverage()
+
+    def filterSmoothingGaussian(self):
+        if self.currentImageObject:
+            self.currentImageObject.filterSmoothingGaussian()
+
+    def filterSmoothingMedian(self):
+        if self.currentImageObject:
+            self.currentImageObject.filterSmoothingMedian()
 
     def update(self, *args, **kwargs):
         if self.currentImageObject:

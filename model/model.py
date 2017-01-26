@@ -103,6 +103,10 @@ class Image(Observable):
         self._zoomFactor = 1
         self.update_observers(self)
 
+    def saveImage(self, path):
+        if self.img is not None:
+            cv2.imwrite(path, self.img)
+
     def addContrastCLAHE(self):
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(5, 5))
         self.img = clahe.apply(self.img)
@@ -127,3 +131,33 @@ class Image(Observable):
             return cv2.resize(self.img,None,fx=self._zoomFactor,fy=self._zoomFactor, interpolation=cv2.INTER_CUBIC)
         elif 0 < self._zoomFactor < 1:
             return cv2.resize(self.img, None, fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_AREA)
+
+    def filterSmoothingAverage(self, kernelSize):
+        if self.img is not None:
+            self.img = cv2.blur(self.img, kernelSize)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def filterSmoothingMedian(self, kernelSize):
+        if self.img is not None:
+            self.img = cv2.medianBlur(self.img, kernelSize)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def filterSmoothingGaussian(self, kernelSize):
+        if self.img is not None:
+            self.img = cv2.GaussianBlur(self.img, kernelSize, 0)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def derivativeLaPlace(self):
+        if self.img is not None:
+            self.img = cv2.Laplacian(self.img, cv2.CV_8U)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def derivativeSobel(self):
+        if self.img is not None:
+            self.img = cv2.Sobel(self.img, cv2.CV_8U, 1, 0, ksize=5)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
