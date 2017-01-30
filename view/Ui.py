@@ -1,6 +1,7 @@
 from view.mainWindow_structure import Ui_MainWindow
 from view.contrastDialog_structure import Ui_ContrastDialog
 from view.smoothingDialog_structure import Ui_SmoothingDialog
+from view.segmentationDialog_structure import Ui_SegmentationDialog
 from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox
 
 
@@ -52,4 +53,10 @@ class SmoothingDialog(QDialog, Ui_SmoothingDialog):
             msgBox.exec_()
         else:
             self.accept()
+
+class SegmentationDialog(QDialog, Ui_SegmentationDialog):
+    def __init__(self):
+        QDialog.__init__(self)
+        Ui_SegmentationDialog.__init__(self)
+        self.setupUi(self)
 

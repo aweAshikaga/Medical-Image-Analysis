@@ -27,6 +27,10 @@ class ViewController(object):
         self.mainWindow.actionDerivativeLaPlace.triggered.connect(self.addDerivativeLaPlace)
         self.mainWindow.actionDerivativeSobel.triggered.connect(self.addDerivateSobel)
         self.mainWindow.actionSave.triggered.connect(self.saveImage)
+        #self.mainWindow.actionSegmentation.triggered.connect(self.addWatershedSegmentation)
+        self.mainWindow.actionSegmentation.triggered.connect(self.addSegmentation)
+        #self.mainWindow.actionSharpen.triggered.connect(self.addSharpening)
+        self.mainWindow.actionSharpen.triggered.connect(self.addHughLines)
 
     def redo(self):
         if self.currentImageObject:
@@ -35,6 +39,10 @@ class ViewController(object):
     def undo(self):
         if self.currentImageObject:
             self.currentImageObject.undo()
+
+    def addHughLines(self):
+        if self.currentImageObject:
+            self.currentImageObject.hughLines()
 
     def addContrast(self):
         if self.currentImageObject:
@@ -59,6 +67,19 @@ class ViewController(object):
                 elif dialog.radioBtnMedian.isChecked():
                     self.currentImageObject.filterSmoothingMedian(kernelSize)
 
+    def addSegmentation(self):
+        if self.currentImageObject:
+            dialog = Ui.SegmentationDialog()
+            dialog.exec_()
+            if dialog.result() == 1:
+                if dialog.radioBtnManual.isChecked():
+                    thresh = dialog.hSliderManual.value()
+                    self.currentImageObject.thresholdManual(thresh)
+                elif dialog.radioBtnAdaptive.isChecked():
+                    self.currentImageObject.thresholdAdaptive()
+                elif dialog.radioBtnOtsu.isChecked():
+                    self.currentImageObject.thresholdOtsu()
+
     def addDerivativeLaPlace(self):
         if self.currentImageObject:
             self.currentImageObject.derivativeLaPlace()
@@ -68,7 +89,7 @@ class ViewController(object):
             self.currentImageObject.derivativeSobel()
 
     def openFile(self):
-        filePath = QFileDialog.getOpenFileName(self.mainWindow.window, 'Open file', '/home', '*.jpg; *.png')[0]
+        filePath = QFileDialog.getOpenFileName(self.mainWindow.window, 'Open file', '/home', '*.jpg; *.png; *.tiff')[0]
 
         if filePath:
             # Get the filename from the whole file path
@@ -94,7 +115,7 @@ class ViewController(object):
 
     def saveImage(self):
         if self.currentImageObject:
-            filePath = QFileDialog.getSaveFileName(self.mainWindow.window, "Save file", "/home", ".jpg")[0]
+            filePath = QFileDialog.getSaveFileName(self.mainWindow.window, "Save file", "/home", filter="*.jpg;;*.png;;*.tiff")[0]
 
             if filePath:
                 self.currentImageObject.saveImage(filePath)
@@ -118,17 +139,25 @@ class ViewController(object):
         if self.currentImageObject:
             self.currentImageObject.zoomFactor -= 0.25
 
-    def filterSmoothingAverage(self):
-        if self.currentImageObject:
-            self.currentImageObject.filterSmoothingAverage()
+    # def filterSmoothingAverage(self):
+    #     if self.currentImageObject:
+    #         self.currentImageObject.filterSmoothingAverage()
+    #
+    # def filterSmoothingGaussian(self):
+    #     if self.currentImageObject:
+    #         self.currentImageObject.filterSmoothingGaussian()
+    #
+    # def filterSmoothingMedian(self):
+    #     if self.currentImageObject:
+    #         self.currentImageObject.filterSmoothingMedian()
 
-    def filterSmoothingGaussian(self):
+    def addSharpening(self):
         if self.currentImageObject:
-            self.currentImageObject.filterSmoothingGaussian()
+            self.currentImageObject.sharpen()
 
-    def filterSmoothingMedian(self):
+    def addWatershedSegmentation(self):
         if self.currentImageObject:
-            self.currentImageObject.filterSmoothingMedian()
+            self.currentImageObject.watershedSegmentation()
 
     def update(self, *args, **kwargs):
         if self.currentImageObject:

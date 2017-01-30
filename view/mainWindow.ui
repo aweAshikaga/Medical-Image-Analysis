@@ -143,6 +143,7 @@
     <addaction name="menuDerivative_Filter"/>
     <addaction name="actionSegmentation"/>
     <addaction name="actionContrast"/>
+    <addaction name="actionSharpen"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis">
     <property name="title">
@@ -271,6 +272,11 @@
   <action name="actionSmoothingFilter">
    <property name="text">
     <string>Smoothing Filter</string>
+   </property>
+  </action>
+  <action name="actionSharpen">
+   <property name="text">
+    <string>Sharpen</string>
    </property>
   </action>
  </widget>

@@ -130,6 +130,8 @@ class Ui_MainWindow(object):
         self.actionDerivativeLaPlace.setObjectName("actionDerivativeLaPlace")
         self.actionSmoothingFilter = QtWidgets.QAction(MainWindow)
         self.actionSmoothingFilter.setObjectName("actionSmoothingFilter")
+        self.actionSharpen = QtWidgets.QAction(MainWindow)
+        self.actionSharpen.setObjectName("actionSharpen")
         self.menuFile.addAction(self.actionOpen)
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addAction(self.actionExport)
@@ -145,6 +147,7 @@ class Ui_MainWindow(object):
         self.menuProcessing.addAction(self.menuDerivative_Filter.menuAction())
         self.menuProcessing.addAction(self.actionSegmentation)
         self.menuProcessing.addAction(self.actionContrast)
+        self.menuProcessing.addAction(self.actionSharpen)
         self.menuAnalysis.addAction(self.actionFiberDiameter)
         self.menuAnalysis.addAction(self.actionFiberOrientation)
         self.menubar.addAction(self.menuFile.menuAction())
@@ -188,6 +191,7 @@ class Ui_MainWindow(object):
         self.actionDerivativeSobel.setText(_translate("MainWindow", "Sobel"))
         self.actionDerivativeLaPlace.setText(_translate("MainWindow", "LaPlace"))
         self.actionSmoothingFilter.setText(_translate("MainWindow", "Smoothing Filter"))
+        self.actionSharpen.setText(_translate("MainWindow", "Sharpen"))
 
 from PyQt5.QtWidgets import QTabBar
 import resources_rc
