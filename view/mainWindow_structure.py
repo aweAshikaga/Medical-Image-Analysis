@@ -132,6 +132,10 @@ class Ui_MainWindow(object):
         self.actionSmoothingFilter.setObjectName("actionSmoothingFilter")
         self.actionSharpen = QtWidgets.QAction(MainWindow)
         self.actionSharpen.setObjectName("actionSharpen")
+        self.actionWatershed_Transformation = QtWidgets.QAction(MainWindow)
+        self.actionWatershed_Transformation.setObjectName("actionWatershed_Transformation")
+        self.actionTest = QtWidgets.QAction(MainWindow)
+        self.actionTest.setObjectName("actionTest")
         self.menuFile.addAction(self.actionOpen)
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addAction(self.actionExport)
@@ -148,6 +152,8 @@ class Ui_MainWindow(object):
         self.menuProcessing.addAction(self.actionSegmentation)
         self.menuProcessing.addAction(self.actionContrast)
         self.menuProcessing.addAction(self.actionSharpen)
+        self.menuProcessing.addAction(self.actionWatershed_Transformation)
+        self.menuProcessing.addAction(self.actionTest)
         self.menuAnalysis.addAction(self.actionFiberDiameter)
         self.menuAnalysis.addAction(self.actionFiberOrientation)
         self.menubar.addAction(self.menuFile.menuAction())
@@ -192,6 +198,8 @@ class Ui_MainWindow(object):
         self.actionDerivativeLaPlace.setText(_translate("MainWindow", "LaPlace"))
         self.actionSmoothingFilter.setText(_translate("MainWindow", "Smoothing Filter"))
         self.actionSharpen.setText(_translate("MainWindow", "Sharpen"))
+        self.actionWatershed_Transformation.setText(_translate("MainWindow", "Watershed Transformation"))
+        self.actionTest.setText(_translate("MainWindow", "test"))
 
 from PyQt5.QtWidgets import QTabBar
 import resources_rc

@@ -144,6 +144,8 @@
     <addaction name="actionSegmentation"/>
     <addaction name="actionContrast"/>
     <addaction name="actionSharpen"/>
+    <addaction name="actionWatershed_Transformation"/>
+    <addaction name="actionTest"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis">
     <property name="title">
@@ -277,6 +279,16 @@
   <action name="actionSharpen">
    <property name="text">
     <string>Sharpen</string>
+   </property>
+  </action>
+  <action name="actionWatershed_Transformation">
+   <property name="text">
+    <string>Watershed Transformation</string>
+   </property>
+  </action>
+  <action name="actionTest">
+   <property name="text">
+    <string>test</string>
    </property>
   </action>
  </widget>

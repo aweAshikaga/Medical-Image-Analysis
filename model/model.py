@@ -188,30 +188,50 @@ class Image(Observable):
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
+    def edges(self):
+        if self.img is not None:
+            self.img = cv2.Canny(self.img, 50, 150, apertureSize=3)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def hughLinesP(self):
+        if self.img is not None:
+            #edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
+            #self.img = (255-edges)
+            #edges = (255-edges)
+            edges = self.img
+
+            minLineLength =  100
+            maxLineGap = 100
+            lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 255, minLineLength, maxLineGap)
+
+            print(lines[0])
+            for x in range(0, len(lines)):
+                for x1, y1, x2, y2 in lines[x]:
+                    cv2.line(self.img, (x1, y1), (x2, y2), 127, 1)
+
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
     def hughLines(self):
         if self.img is not None:
             edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
-            # minLineLength = 500
-            # maxLineGap = 30
-            # lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 240, minLineLength, maxLineGap)
-            #
-            # print(lines[0])
-            # i=0
-            # for x in range(0, len(lines)):
-            #     for x1, y1, x2, y2 in lines[x]:
-            #         cv2.line(self.img, (x1, y1), (x2, y2), 127, 5)
+            #self.img = cv2.Canny(self.img, 50, 150, apertureSize=3)
+            #edges = (255 - edges)
 
-            lines = cv2.HoughLines(edges, 1, np.pi / 180, 240)
+            #edges = self.img
+
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, 235)
             for x in range(0, len(lines)):
                 for rho, theta in lines[x]:
                     a = np.cos(theta)
                     b = np.sin(theta)
                     x0 = a * rho
                     y0 = b * rho
-                    x1 = int(x0 + 1000 * (-b))
-                    y1 = int(y0 + 1000 * (a))
-                    x2 = int(x0 - 1000 * (-b))
-                    y2 = int(y0 - 1000 * (a))
+                    x1 = int(x0 + 5000 * (-b))
+                    y1 = int(y0 + 5000 * (a))
+                    x2 = int(x0 - 5000 * (-b))
+                    y2 = int(y0 - 5000 * (a))
 
                     cv2.line(self.img, (x1, y1), (x2, y2), 127, 2)
 
@@ -223,6 +243,8 @@ class Image(Observable):
 
     def watershedSegmentation(self):
         if self.img is not None:
+
+
             ret, thresh = cv2.threshold(self.img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
             # noise removal
@@ -249,6 +271,25 @@ class Image(Observable):
             # Now, mark the region of unknown with zero
             markers[unknown == 255] = 0
 
+            # convert single channel to three channels
+            temp = np.empty((self.img.shape[0], self.img.shape[1], 3), dtype=np.uint8)
+            temp[:, :, 0] = self.img
+            temp[:, :, 1] = self.img
+            temp[:, :, 2] = self.img
+
             # Problem: cv2.watershed expects 3 channel input. self.img has to be converted first.
-            markers = cv2.watershed(self.img, markers)
-            self.img[markers == -1] = 255
+            markers = cv2.watershed(temp, markers)
+            temp[markers == -1] = 255
+
+            self.img = cv2.cvtColor(temp, cv2.COLOR_RGB2GRAY)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def contours(self):
+        if self.img is not None:
+            ret, thresh = cv2.threshold(self.img, 127, 255, 0)
+            im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            cnt = contours[0]
+            (x, y), (MA, ma), angle = cv2.fitEllipse(cnt)
+            print(angle)

@@ -20,6 +20,10 @@ class MainWindow(Ui_MainWindow):
         """
         self.tabBar.setMovable(True)
         self.tabBar.setTabsClosable(True)
+        self.tabBar.tabCloseRequested.connect(self.closeTab)
+
+    def closeTab(self, index):
+        self.tabBar.removeTab(index)
 
 
 class ContrastDialog(QDialog, Ui_ContrastDialog):

@@ -27,10 +27,16 @@ class ViewController(object):
         self.mainWindow.actionDerivativeLaPlace.triggered.connect(self.addDerivativeLaPlace)
         self.mainWindow.actionDerivativeSobel.triggered.connect(self.addDerivateSobel)
         self.mainWindow.actionSave.triggered.connect(self.saveImage)
-        #self.mainWindow.actionSegmentation.triggered.connect(self.addWatershedSegmentation)
+        self.mainWindow.actionWatershed_Transformation.triggered.connect(self.addWatershedSegmentation)
         self.mainWindow.actionSegmentation.triggered.connect(self.addSegmentation)
-        #self.mainWindow.actionSharpen.triggered.connect(self.addSharpening)
-        self.mainWindow.actionSharpen.triggered.connect(self.addHughLines)
+        self.mainWindow.actionSharpen.triggered.connect(self.addSharpening)
+        self.mainWindow.actionFiberOrientation.triggered.connect(self.addHughLines)
+        #self.mainWindow.actionTest.triggered.connect(self.addEdges)
+        self.mainWindow.actionTest.triggered.connect(self.addContour)
+
+    def addEdges(self):
+        if self.currentImageObject:
+            self.currentImageObject.edges()
 
     def redo(self):
         if self.currentImageObject:
@@ -159,8 +165,13 @@ class ViewController(object):
         if self.currentImageObject:
             self.currentImageObject.watershedSegmentation()
 
+    def addContour(self):
+        if self.currentImageObject:
+            self.currentImageObject.contours()
+
     def update(self, *args, **kwargs):
         if self.currentImageObject:
             self.displayImage()
             self.mainWindow.lblImageSize.setText(str(self.currentImageObject.getImageDimensions()))
             self.mainWindow.lblZoomFactor.setText(str(self.currentImageObject.zoomFactor))
+
