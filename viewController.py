@@ -31,8 +31,26 @@ class ViewController(object):
         self.mainWindow.actionSegmentation.triggered.connect(self.addSegmentation)
         self.mainWindow.actionSharpen.triggered.connect(self.addSharpening)
         self.mainWindow.actionFiberOrientation.triggered.connect(self.addHughLines)
-        #self.mainWindow.actionTest.triggered.connect(self.addEdges)
-        self.mainWindow.actionTest.triggered.connect(self.addContour)
+        self.mainWindow.actionTop_Hat_Transformation.triggered.connect(self.addTopHatTransformation)
+        self.mainWindow.actionDilation.triggered.connect(self.addDilation)
+        self.mainWindow.actionSkeletonization.triggered.connect(self.addSkeletonization)
+        self.mainWindow.actionTest.triggered.connect(self.checkPorosity)
+
+    def checkPorosity(self):
+        if self.currentImageObject:
+            self.currentImageObject.getPorosity()
+
+    def addSkeletonization(self):
+        if self.currentImageObject:
+            self.currentImageObject.skeletonization()
+
+    def addTopHatTransformation(self):
+        if self.currentImageObject:
+            self.currentImageObject.topHatTransformation()
+
+    def addDilation(self):
+        if self.currentImageObject:
+            self.currentImageObject.dilation()
 
     def addEdges(self):
         if self.currentImageObject:

@@ -139,6 +139,14 @@
      <addaction name="actionDerivativeSobel"/>
      <addaction name="actionDerivativeLaPlace"/>
     </widget>
+    <widget class="QMenu" name="menuMorphological_Transformation">
+     <property name="title">
+      <string>Morphological Transformation</string>
+     </property>
+     <addaction name="actionTop_Hat_Transformation"/>
+     <addaction name="actionDilation"/>
+     <addaction name="actionSkeletonization"/>
+    </widget>
     <addaction name="actionSmoothingFilter"/>
     <addaction name="menuDerivative_Filter"/>
     <addaction name="actionSegmentation"/>
@@ -146,6 +154,7 @@
     <addaction name="actionSharpen"/>
     <addaction name="actionWatershed_Transformation"/>
     <addaction name="actionTest"/>
+    <addaction name="menuMorphological_Transformation"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis">
     <property name="title">
@@ -289,6 +298,21 @@
   <action name="actionTest">
    <property name="text">
     <string>test</string>
+   </property>
+  </action>
+  <action name="actionTop_Hat_Transformation">
+   <property name="text">
+    <string>Top-Hat Transformation</string>
+   </property>
+  </action>
+  <action name="actionDilation">
+   <property name="text">
+    <string>Dilation</string>
+   </property>
+  </action>
+  <action name="actionSkeletonization">
+   <property name="text">
+    <string>Skeletonization</string>
    </property>
   </action>
  </widget>

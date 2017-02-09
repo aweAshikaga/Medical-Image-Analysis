@@ -3,6 +3,7 @@ import rpy2.robjects as robjects
 import rpy2.robjects.numpy2ri
 import cv2
 import collections
+import model.algorithms as algorithms
 
 
 class Observable(object):
@@ -221,7 +222,7 @@ class Image(Observable):
 
             #edges = self.img
 
-            lines = cv2.HoughLines(edges, 1, np.pi / 180, 235)
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, 300)
             for x in range(0, len(lines)):
                 for rho, theta in lines[x]:
                     a = np.cos(theta)
@@ -293,3 +294,33 @@ class Image(Observable):
             cnt = contours[0]
             (x, y), (MA, ma), angle = cv2.fitEllipse(cnt)
             print(angle)
+
+    def topHatTransformation(self):
+        if self.img is not None:
+            kernel = np.ones((5, 5), np.uint8)
+            self.img = cv2.morphologyEx(self.img, cv2.MORPH_TOPHAT, kernel)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def dilation(self):
+        if self.img is not None:
+            kernel = np.ones((5, 5), np.uint8)
+            self.img = cv2.dilate(self.img, kernel, iterations=1)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def skeletonization(self):
+        if self.img is not None:
+            self.img = algorithms.skeletonization(self.img)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+
+    def getPorosity(self):
+        if self.img is not None:
+            blackPixelCount = (self.img == 0).sum()
+            totalPixelCount = (self.img.shape[0] * self.img.shape[1])
+            porosity = blackPixelCount / totalPixelCount
+            porosityPercentage = porosity * 100
+            print("Porosity: {0:.2f}%".format(porosityPercentage, 2))
+            return porosity
+
