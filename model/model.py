@@ -2,6 +2,7 @@ import numpy as np
 import rpy2.robjects as robjects
 import rpy2.robjects.numpy2ri
 import cv2
+import math
 import collections
 import model.algorithms as algorithms
 
@@ -222,9 +223,12 @@ class Image(Observable):
 
             #edges = self.img
 
+            angles = []
+
             lines = cv2.HoughLines(edges, 1, np.pi / 180, 300)
             for x in range(0, len(lines)):
                 for rho, theta in lines[x]:
+                    angles.append(theta * (180/math.pi))
                     a = np.cos(theta)
                     b = np.sin(theta)
                     x0 = a * rho
@@ -238,6 +242,7 @@ class Image(Observable):
 
             self.update_observers(self)
             self.imgHistory.redo.clear()
+            return angles
 
     #FindCountour
     #FindOrientation of contour
@@ -321,6 +326,6 @@ class Image(Observable):
             totalPixelCount = (self.img.shape[0] * self.img.shape[1])
             porosity = blackPixelCount / totalPixelCount
             porosityPercentage = porosity * 100
-            print("Porosity: {0:.2f}%".format(porosityPercentage, 2))
+            print("Porosity: {0:.2f}%".format(porosityPercentage))
             return porosity
 

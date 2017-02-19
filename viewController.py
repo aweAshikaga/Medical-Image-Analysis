@@ -1,8 +1,11 @@
 import view.Ui as Ui
 import model.model as model
 import os
-from PyQt5.QtWidgets import QMainWindow, QFileDialog
-from PyQt5.QtGui import QPixmap, QImage
+import numpy as np
+import matplotlib.pyplot as plt
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox
+from PyQt5.QtGui import QPixmap, QImage, QGuiApplication, QPainter, QColor
+from PyQt5.QtCore import Qt, QEvent
 
 
 class ViewController(object):
@@ -11,11 +14,18 @@ class ViewController(object):
         self.mainWindow = Ui.MainWindow()
         self.connectActions()
 
+        self._isDefiningArea = False
+        self._initialAreaPoint = (-1, -1)
+        self._endAreaPoint = (-1, -1)
+
     @property
     def currentImageObject(self):
         return self.mainWindow.tabBar.tabData(self.mainWindow.tabBar.currentIndex())
 
     def connectActions(self):
+        """Connect the view action signals to their respective slots
+        """
+
         self.mainWindow.actionOpen.triggered.connect(self.openFile)
         self.mainWindow.actionContrast.triggered.connect(self.addContrast)
         self.mainWindow.actionZoomIn.triggered.connect(self.zoomIn)
@@ -35,20 +45,82 @@ class ViewController(object):
         self.mainWindow.actionDilation.triggered.connect(self.addDilation)
         self.mainWindow.actionSkeletonization.triggered.connect(self.addSkeletonization)
         self.mainWindow.actionTest.triggered.connect(self.checkPorosity)
+        self.mainWindow.actionDefineAreas.triggered.connect(self.grabArea)
+        self.mainWindow.lblImgDisplay.setMouseTracking(True)
+        self.mainWindow.lblImgDisplay.mousePressEvent = self.getMousePositionOnLabel
+        self.mainWindow.lblImgDisplay.mouseMoveEvent = self.getMousePositionOnLabel
+        #self.mainWindow.lblImgDisplay.paintEvent = self.paintEvent
+        self.mainWindow.keyPressEvent = self.keyPressEvent
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.mainWindow.menubar.setEnabled(True)
+            QGuiApplication.setOverrideCursor(Qt.ArrowCursor)
+            print(self._initialAreaPoint)
+            print(self._endAreaPoint)
+            self.drawRectOnLabel(self._initialAreaPoint, self._endAreaPoint)
+            self._isDefiningArea = False
+            self.mainWindow.lblImgDisplay.repaint()
+            self._initialAreaPoint = (-1, -1)
+            self._endAreaPoint = (-1, -1)
+
+    def drawRectOnLabel(self, point1, point2):
+        if self._isDefiningArea and self.currentImageObject and self._initialAreaPoint != (-1, -1):
+            self.displayImage()
+            qp = QPainter()
+            qp.begin(self.mainWindow.lblImgDisplay.pixmap())
+            qp.setPen(QColor(255, 0, 0))
+            x = point1[0]
+            y = point1[1]
+            width = point2[0] - point1[0]
+            height = point2[1] - point1[1]
+            qp.drawRect(x, y, width, height)
+            qp.end()
+            self.mainWindow.lblImgDisplay.repaint()
+
+    def grabArea(self):
+        self.mainWindow.menubar.setEnabled(False)
+        QGuiApplication.setOverrideCursor(Qt.CrossCursor)
+        self._isDefiningArea = True
+
+    def getMousePositionOnLabel(self, event):
+        if self._isDefiningArea:
+            x = event.pos().x()
+            y = event.pos().y()
+            print(event.button())
+            if self._initialAreaPoint == (-1, -1) and event.button() == 1:
+                self._initialAreaPoint = (x, y)
+            else:
+                self._endAreaPoint = (x, y)
+                self .drawRectOnLabel(self._initialAreaPoint, self._endAreaPoint)
 
     def checkPorosity(self):
+        """ Get the porosity of the current image.
+        """
         if self.currentImageObject:
-            self.currentImageObject.getPorosity()
+            porosity = self.currentImageObject.getPorosity() * 100
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Information)
+            msgbox.setWindowTitle("Medical Image Analysis")
+            msgbox.setText("The porosity is: {0:.2f} %".format(porosity))
+            msgbox.exec_()
+
 
     def addSkeletonization(self):
+        """ Add skeletonization to the current image.
+        """
         if self.currentImageObject:
             self.currentImageObject.skeletonization()
 
     def addTopHatTransformation(self):
+        """ Add top hat transformation to the current image.
+        """
         if self.currentImageObject:
             self.currentImageObject.topHatTransformation()
 
     def addDilation(self):
+        """ Add dilation to the current image.
+        """
         if self.currentImageObject:
             self.currentImageObject.dilation()
 
@@ -66,17 +138,24 @@ class ViewController(object):
 
     def addHughLines(self):
         if self.currentImageObject:
-            self.currentImageObject.hughLines()
+            angles = self.currentImageObject.hughLines()
+            np.histogram(angles)
+            plt.hist(angles, bins=180, range=(0, 180))
+            plt.show()
+
 
     def addContrast(self):
         if self.currentImageObject:
             dialog = Ui.ContrastDialog()
             dialog.exec_()
+
             if dialog.result() == 1:
                 if dialog.radioBtnCLAHE.isChecked():
                     self.currentImageObject.addContrastCLAHE()
                 elif dialog.radioBtnManual.isChecked():
-                    self.currentImageObject.addContrastCustom(2)
+                    contrastValue = dialog.doubleSpinBox.value()
+                    print(contrastValue)
+                    self.currentImageObject.addContrastCustom(contrastValue)
 
     def addSmoothing(self):
         if self.currentImageObject:
@@ -112,8 +191,28 @@ class ViewController(object):
         if self.currentImageObject:
             self.currentImageObject.derivativeSobel()
 
+    def createImageFromArea(self, newImage):
+        newTabBarIndex = self.mainWindow.tabBar.addTab("New Image")
+
+        # Make the new tab the active tab.
+        self.mainWindow.tabBar.setCurrentIndex(newTabBarIndex)
+
+        # Create a new image object for the new tab.
+        newImage = model.Image()
+
+        # Register this viewController as an observer to the image object.
+        newImage.register(self)
+
+        # Save the reference to the image object in the tab data of the newly created tab.
+        self.mainWindow.tabBar.setTabData(newTabBarIndex, newImage)
+
+        # Open the selected image and remember the reference to its image object.
+        newImage.img = newImage
+
     def openFile(self):
-        filePath = QFileDialog.getOpenFileName(self.mainWindow.window, 'Open file', '/home', '*.jpg; *.png; *.tiff')[0]
+        """ Open a file dialog and open the chosen file path.
+        """
+        filePath = QFileDialog.getOpenFileName(self.mainWindow, 'Open file', '/home', '*.jpg; *.png; *.tiff')[0]
 
         if filePath:
             # Get the filename from the whole file path
@@ -138,14 +237,23 @@ class ViewController(object):
             newImage.openFile(filePath)
 
     def saveImage(self):
+        """ Open a file dialog and save the current image to the chosen file path.
+        """
         if self.currentImageObject:
-            filePath = QFileDialog.getSaveFileName(self.mainWindow.window, "Save file", "/home", filter="*.jpg;;*.png;;*.tiff")[0]
+            filePath = QFileDialog.getSaveFileName(self.mainWindow, "Save file", "/home", filter="*.jpg;;*.png;;*.tiff")[0]
 
             if filePath:
+                # Change tab text to new filename.
+                filename = os.path.split(filePath)[1]
+                index = self.mainWindow.tabBar.currentIndex()
+                self.mainWindow.tabBar.setTabText(index, filename)
+
+                # Save the image to the new filename.
                 self.currentImageObject.saveImage(filePath)
 
-
     def displayImage(self):
+        """ Display the image model of the current tab with its zoom factor on the QLabel.
+        """
         if self.currentImageObject:
             img = self.currentImageObject.getZoomedImage()
 
@@ -156,38 +264,38 @@ class ViewController(object):
                 self.mainWindow.lblImgDisplay.setPixmap(qPix)
 
     def zoomIn(self):
+        """ Zoom in the current image by 25%.
+        """
         if self.currentImageObject:
             self.currentImageObject.zoomFactor += 0.25
 
     def zoomOut(self):
+        """ Zoom out the current image by 25%.
+        """
         if self.currentImageObject:
             self.currentImageObject.zoomFactor -= 0.25
 
-    # def filterSmoothingAverage(self):
-    #     if self.currentImageObject:
-    #         self.currentImageObject.filterSmoothingAverage()
-    #
-    # def filterSmoothingGaussian(self):
-    #     if self.currentImageObject:
-    #         self.currentImageObject.filterSmoothingGaussian()
-    #
-    # def filterSmoothingMedian(self):
-    #     if self.currentImageObject:
-    #         self.currentImageObject.filterSmoothingMedian()
-
     def addSharpening(self):
+        """ Sharpen the current image.
+        """
         if self.currentImageObject:
             self.currentImageObject.sharpen()
 
     def addWatershedSegmentation(self):
+        """ Add watershed segmentation to the current image.
+        """
         if self.currentImageObject:
             self.currentImageObject.watershedSegmentation()
 
     def addContour(self):
+        """ Highlight the contours of the current image.
+        """
         if self.currentImageObject:
             self.currentImageObject.contours()
 
     def update(self, *args, **kwargs):
+        """ Update the current image. This method serves as slot for an observer pattern.
+        """
         if self.currentImageObject:
             self.displayImage()
             self.mainWindow.lblImageSize.setText(str(self.currentImageObject.getImageDimensions()))

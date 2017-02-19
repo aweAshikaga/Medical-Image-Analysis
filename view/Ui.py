@@ -5,13 +5,12 @@ from view.segmentationDialog_structure import Ui_SegmentationDialog
 from PyQt5.QtWidgets import QMainWindow, QDialog, QMessageBox
 
 
-class MainWindow(Ui_MainWindow):
+class MainWindow(Ui_MainWindow, QMainWindow):
     def __init__(self):
         super().__init__()
-        self.window = QMainWindow()
-        self.setupUi(self.window)
+        self.setupUi(self)
         self.setupTabBar()
-        self.window.show()
+        self.show()
 
     def setupTabBar(self):
         """ The QT-designer does not provide the QTabBar-widget for some reason.
