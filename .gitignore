@@ -49,3 +49,6 @@ Temporary Items
 #other directories
 __pycache__
 .idea
+
+#R-Files
+.Rhistory

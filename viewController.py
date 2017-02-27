@@ -3,9 +3,9 @@ import model.model as model
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage, QGuiApplication, QPainter, QColor
-from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtCore import Qt
 
 
 class ViewController(object):
@@ -40,7 +40,7 @@ class ViewController(object):
         self.mainWindow.actionWatershed_Transformation.triggered.connect(self.addWatershedSegmentation)
         self.mainWindow.actionSegmentation.triggered.connect(self.addSegmentation)
         self.mainWindow.actionSharpen.triggered.connect(self.addSharpening)
-        self.mainWindow.actionFiberOrientation.triggered.connect(self.addHughLines)
+        self.mainWindow.actionFiberOrientation.triggered.connect(self.addHoughLines)
         self.mainWindow.actionTop_Hat_Transformation.triggered.connect(self.addTopHatTransformation)
         self.mainWindow.actionDilation.triggered.connect(self.addDilation)
         self.mainWindow.actionSkeletonization.triggered.connect(self.addSkeletonization)
@@ -49,20 +49,21 @@ class ViewController(object):
         self.mainWindow.lblImgDisplay.setMouseTracking(True)
         self.mainWindow.lblImgDisplay.mousePressEvent = self.getMousePositionOnLabel
         self.mainWindow.lblImgDisplay.mouseMoveEvent = self.getMousePositionOnLabel
+
         #self.mainWindow.lblImgDisplay.paintEvent = self.paintEvent
         self.mainWindow.keyPressEvent = self.keyPressEvent
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
-            self.mainWindow.menubar.setEnabled(True)
-            QGuiApplication.setOverrideCursor(Qt.ArrowCursor)
-            print(self._initialAreaPoint)
-            print(self._endAreaPoint)
-            self.drawRectOnLabel(self._initialAreaPoint, self._endAreaPoint)
-            self._isDefiningArea = False
-            self.mainWindow.lblImgDisplay.repaint()
-            self._initialAreaPoint = (-1, -1)
-            self._endAreaPoint = (-1, -1)
+            self.cancelDefineArea()
+
+    def cancelDefineArea(self):
+        self.mainWindow.menubar.setEnabled(True)
+        QGuiApplication.setOverrideCursor(Qt.ArrowCursor)
+        self._isDefiningArea = False
+        self._initialAreaPoint = (-1, -1)
+        self._endAreaPoint = (-1, -1)
+        self.displayImage()
 
     def drawRectOnLabel(self, point1, point2):
         if self._isDefiningArea and self.currentImageObject and self._initialAreaPoint != (-1, -1):
@@ -87,12 +88,114 @@ class ViewController(object):
         if self._isDefiningArea:
             x = event.pos().x()
             y = event.pos().y()
-            print(event.button())
+
+            pixmapInitialAreaPoint = self.convertLabelPointToPixmapPoint(self._initialAreaPoint)
+            pixmapEndAreaPoint = self.convertLabelPointToPixmapPoint(self._endAreaPoint)
+
             if self._initialAreaPoint == (-1, -1) and event.button() == 1:
+                # Left mouse button was pressed for the first time while defining area.
                 self._initialAreaPoint = (x, y)
-            else:
+            elif self._initialAreaPoint != (-1, -1) and event.button() == 0:
+                # The rect angle is currently drawing and no button has been pressed.
                 self._endAreaPoint = (x, y)
-                self .drawRectOnLabel(self._initialAreaPoint, self._endAreaPoint)
+                self .drawRectOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
+            elif event.button() == 2:
+                # Right mouse button has been pressed to cancel the process.
+                self.cancelDefineArea()
+            elif self._initialAreaPoint != (-1, -1) and event.button() == 1:
+                # Left mouse button was pressed for the second time while defining area.
+                self.mainWindow.menubar.setEnabled(True)
+                QGuiApplication.setOverrideCursor(Qt.ArrowCursor)
+                self.drawRectOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
+                self._isDefiningArea = False
+                self.mainWindow.lblImgDisplay.repaint()
+
+                # Create new tab with defined area
+                initPoint = self.convertZoomedPointToOriginalPoint(pixmapInitialAreaPoint)
+                endPoint = self.convertZoomedPointToOriginalPoint(pixmapEndAreaPoint)
+                startX = int(initPoint[0])
+                startY = int(initPoint[1])
+                endX = int(endPoint[0])
+                endY = int(endPoint[1])
+
+                if startX > endX:
+                    startX, endX = endX, startX
+
+                if startY > endY:
+                    startY, endY = endY, startY
+
+                imageDataOfArea = self.currentImageObject.img[startY:endY, startX:endX]
+
+                # Add a new tab (with filename as caption) and remember its index.
+                newTabBarIndex = self.mainWindow.tabBar.addTab("new")
+
+                # Make the new tab the active tab.
+                self.mainWindow.tabBar.setCurrentIndex(newTabBarIndex)
+
+                # Create a new image object for the new tab.
+                newImage = model.Image(imageDataOfArea)
+
+                # Register this viewController as an observer to the image object.
+                newImage.register(self)
+
+                # Save the reference to the image object in the tab data of the newly created tab.
+                self.mainWindow.tabBar.setTabData(newTabBarIndex, newImage)
+
+                # Update the image, so that it shows on screen.
+                self.displayImage()
+
+                # Set the coordinates responsible for defining the area back to their basic state.
+                self._initialAreaPoint = (-1, -1)
+                self._endAreaPoint = (-1, -1)
+
+    def convertZoomedPointToOriginalPoint(self, zoomedPoint):
+        zoomFactor = self.currentImageObject.zoomFactor
+        zoomedX = zoomedPoint[0]
+        zoomedY = zoomedPoint[1]
+        imgWidth = self.currentImageObject.img.shape[1]
+        imgHeight = self.currentImageObject.img.shape[0]
+
+        originalX = zoomedX / zoomFactor
+        originalY = zoomedY / zoomFactor
+
+        if originalX < 0:
+            originalX = 0
+        elif originalX > imgWidth:
+            originalX = imgWidth
+
+        if originalY < 0:
+            originalY = 0
+        elif originalY > imgHeight:
+            originalY = imgHeight
+
+        return originalX, originalY
+
+    def convertLabelPointToPixmapPoint(self, labelPoint):
+        labelX = labelPoint[0]
+        labelY = labelPoint[1]
+
+        labelWidth = self.mainWindow.lblImgDisplay.size().width()
+        labelHeight = self.mainWindow.lblImgDisplay.size().height()
+        pixmapWidth = self.mainWindow.lblImgDisplay.pixmap().size().width()
+        pixmapHeight = self.mainWindow.lblImgDisplay.pixmap().size().height()
+
+        offsetX = (labelWidth - pixmapWidth) / 2
+        offsetY = (labelHeight - pixmapHeight) / 2
+
+        pixmapX = labelX - offsetX
+        pixmapY = labelY - offsetY
+
+        if pixmapX < 0:
+            pixmapX = 0
+        elif pixmapX > pixmapWidth:
+            pixmapX = pixmapWidth
+
+        if pixmapY < 0:
+            pixmapY = 0
+        elif pixmapY > pixmapHeight:
+            pixmapY = pixmapHeight
+
+        return pixmapX, pixmapY
 
     def checkPorosity(self):
         """ Get the porosity of the current image.
@@ -104,7 +207,6 @@ class ViewController(object):
             msgbox.setWindowTitle("Medical Image Analysis")
             msgbox.setText("The porosity is: {0:.2f} %".format(porosity))
             msgbox.exec_()
-
 
     def addSkeletonization(self):
         """ Add skeletonization to the current image.
@@ -136,13 +238,12 @@ class ViewController(object):
         if self.currentImageObject:
             self.currentImageObject.undo()
 
-    def addHughLines(self):
+    def addHoughLines(self):
         if self.currentImageObject:
-            angles = self.currentImageObject.hughLines()
+            angles = self.currentImageObject.houghLines()
             np.histogram(angles)
             plt.hist(angles, bins=180, range=(0, 180))
             plt.show()
-
 
     def addContrast(self):
         if self.currentImageObject:
@@ -190,24 +291,6 @@ class ViewController(object):
     def addDerivateSobel(self):
         if self.currentImageObject:
             self.currentImageObject.derivativeSobel()
-
-    def createImageFromArea(self, newImage):
-        newTabBarIndex = self.mainWindow.tabBar.addTab("New Image")
-
-        # Make the new tab the active tab.
-        self.mainWindow.tabBar.setCurrentIndex(newTabBarIndex)
-
-        # Create a new image object for the new tab.
-        newImage = model.Image()
-
-        # Register this viewController as an observer to the image object.
-        newImage.register(self)
-
-        # Save the reference to the image object in the tab data of the newly created tab.
-        self.mainWindow.tabBar.setTabData(newTabBarIndex, newImage)
-
-        # Open the selected image and remember the reference to its image object.
-        newImage.img = newImage
 
     def openFile(self):
         """ Open a file dialog and open the chosen file path.

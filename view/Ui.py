@@ -23,6 +23,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     def closeTab(self, index):
         self.tabBar.removeTab(index)
+        if self.tabBar.count() == 0:
+            self.lblImgDisplay.clear()
 
 
 class ContrastDialog(QDialog, Ui_ContrastDialog):

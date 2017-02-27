@@ -1,6 +1,4 @@
 import numpy as np
-import rpy2.robjects as robjects
-import rpy2.robjects.numpy2ri
 import cv2
 import math
 import collections
@@ -59,9 +57,14 @@ class History(object):
 
 
 class Image(Observable):
-    def __init__(self):
+    def __init__(self, imgData = None):
         Observable.__init__(self)
-        self._img = None
+
+        if imgData is not None:
+            self._img = np.array(imgData, np.uint8)
+        else:
+            self._img = None
+
         self._zoomFactor = 1
         self.imgHistory = History()
 
@@ -130,7 +133,7 @@ class Image(Observable):
         if self._zoomFactor == 1:
             return self.img
         elif self._zoomFactor > 1:
-            return cv2.resize(self.img,None,fx=self._zoomFactor,fy=self._zoomFactor, interpolation=cv2.INTER_CUBIC)
+            return cv2.resize(self.img,None,fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_CUBIC)
         elif 0 < self._zoomFactor < 1:
             return cv2.resize(self.img, None, fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_AREA)
 
@@ -196,7 +199,7 @@ class Image(Observable):
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
-    def hughLinesP(self):
+    def houghLinesP(self):
         if self.img is not None:
             #edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
             #self.img = (255-edges)
@@ -215,17 +218,12 @@ class Image(Observable):
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
-    def hughLines(self):
+    def houghLines(self):
         if self.img is not None:
             edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
-            #self.img = cv2.Canny(self.img, 50, 150, apertureSize=3)
-            #edges = (255 - edges)
-
-            #edges = self.img
-
             angles = []
 
-            lines = cv2.HoughLines(edges, 1, np.pi / 180, 300)
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=250)
             for x in range(0, len(lines)):
                 for rho, theta in lines[x]:
                     angles.append(theta * (180/math.pi))
@@ -244,13 +242,8 @@ class Image(Observable):
             self.imgHistory.redo.clear()
             return angles
 
-    #FindCountour
-    #FindOrientation of contour
-
     def watershedSegmentation(self):
         if self.img is not None:
-
-
             ret, thresh = cv2.threshold(self.img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
             # noise removal
