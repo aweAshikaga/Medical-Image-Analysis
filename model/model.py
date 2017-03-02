@@ -3,6 +3,8 @@ import cv2
 import math
 import collections
 import model.algorithms as algorithms
+import skimage.morphology
+import skimage.transform
 
 
 class Observable(object):
@@ -220,10 +222,11 @@ class Image(Observable):
 
     def houghLines(self):
         if self.img is not None:
-            edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
+            #edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
+            edges = self.img
             angles = []
 
-            lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=250)
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=300)
             for x in range(0, len(lines)):
                 for rho, theta in lines[x]:
                     angles.append(theta * (180/math.pi))
@@ -237,6 +240,33 @@ class Image(Observable):
                     y2 = int(y0 - 5000 * (a))
 
                     cv2.line(self.img, (x1, y1), (x2, y2), 127, 2)
+
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
+            return angles
+
+    def houghLines2(self):
+        if self.img is not None:
+            out, angles2, d = skimage.transform.hough_line(self._img)
+
+            out, angles2, d = skimage.transform.hough_line_peaks(out, angles2, d, threshold=0.3*np.amax(out), num_peaks=np.inf)
+
+            angles = []
+            for rho, theta in zip(d, angles2):
+                print(rho)
+                print(np.rad2deg(theta))
+                print("----")
+                angles.append(theta * (180 / math.pi))
+                a = np.cos(theta)
+                b = np.sin(theta)
+                x0 = a * rho
+                y0 = b * rho
+                x1 = int(x0 + 5000 * (-b))
+                y1 = int(y0 + 5000 * (a))
+                x2 = int(x0 - 5000 * (-b))
+                y2 = int(y0 - 5000 * (a))
+
+                cv2.line(self._img, (x1, y1), (x2, y2), 127, 5)
 
             self.update_observers(self)
             self.imgHistory.redo.clear()
@@ -308,17 +338,39 @@ class Image(Observable):
             self.imgHistory.redo.clear()
 
     def skeletonization(self):
+        """ Creates a skeleton of the image with the implementation of Zhang Suen.
+            The Image has to be binary.
+        """
         if self.img is not None:
-            self.img = algorithms.skeletonization(self.img)
+            #self.img = self.img
+
+            # Convert from OpenCV format to scikit-image format.
+            self.convertFromOpenCVtoScikitImage()
+
+            # Use scikit-image skeletonize implementation (Zhang Suen algorithm)
+            self._img = skimage.morphology.skeletonize(self._img)
+
+            # Convert format back from scikit-image to OpenCV
+            self.convertFromScikitImageToOpenCV()
+
+            # Update
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
+    def convertFromOpenCVtoScikitImage(self):
+        self._img[self._img == 255] = 1
+
+    def convertFromScikitImageToOpenCV(self):
+        self._img = self._img.astype(np.uint8)
+        self._img[self._img == 1.0] = 255
+        return self._img
+
     def getPorosity(self):
+        """ Returns the ratio of black pixels to the overall pixel count.
+        """
         if self.img is not None:
             blackPixelCount = (self.img == 0).sum()
             totalPixelCount = (self.img.shape[0] * self.img.shape[1])
             porosity = blackPixelCount / totalPixelCount
-            porosityPercentage = porosity * 100
-            print("Porosity: {0:.2f}%".format(porosityPercentage))
             return porosity
 

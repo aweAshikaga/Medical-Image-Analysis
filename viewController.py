@@ -240,9 +240,9 @@ class ViewController(object):
 
     def addHoughLines(self):
         if self.currentImageObject:
-            angles = self.currentImageObject.houghLines()
+            angles = self.currentImageObject.houghLines2()
             np.histogram(angles)
-            plt.hist(angles, bins=180, range=(0, 180))
+            plt.hist(angles, bins=180, range=(- 90, 90))
             plt.show()
 
     def addContrast(self):
