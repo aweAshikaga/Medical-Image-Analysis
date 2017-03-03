@@ -25,6 +25,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.tabBar.removeTab(index)
         if self.tabBar.count() == 0:
             self.lblImgDisplay.clear()
+            self.lblWidth.setText("0")
+            self.lblHeight.setText("0")
+            self.lblBinary.setText("-")
+            self.lblZoomFactor.setText("-")
+            self.lblScale.setText("-")
 
 
 class ContrastDialog(QDialog, Ui_ContrastDialog):

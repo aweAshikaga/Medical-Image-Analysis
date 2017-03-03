@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage, QGuiApplication, QPainter, QColor
 from PyQt5.QtCore import Qt
 
-
 class ViewController(object):
     def __init__(self):
         super().__init__()
@@ -44,7 +43,8 @@ class ViewController(object):
         self.mainWindow.actionTop_Hat_Transformation.triggered.connect(self.addTopHatTransformation)
         self.mainWindow.actionDilation.triggered.connect(self.addDilation)
         self.mainWindow.actionSkeletonization.triggered.connect(self.addSkeletonization)
-        self.mainWindow.actionTest.triggered.connect(self.checkPorosity)
+        self.mainWindow.actionPorosity.triggered.connect(self.checkPorosity)
+        self.mainWindow.actionTest.triggered.connect(self.checkIfBinary)
         self.mainWindow.actionDefineAreas.triggered.connect(self.grabArea)
         self.mainWindow.lblImgDisplay.setMouseTracking(True)
         self.mainWindow.lblImgDisplay.mousePressEvent = self.getMousePositionOnLabel
@@ -52,6 +52,15 @@ class ViewController(object):
 
         #self.mainWindow.lblImgDisplay.paintEvent = self.paintEvent
         self.mainWindow.keyPressEvent = self.keyPressEvent
+
+    def checkIfBinary(self):
+        if self.currentImageObject:
+            isBinary = self.currentImageObject.isBinary()
+
+            if isBinary:
+                print("Yes")
+            else:
+                print("No")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -381,6 +390,13 @@ class ViewController(object):
         """
         if self.currentImageObject:
             self.displayImage()
-            self.mainWindow.lblImageSize.setText(str(self.currentImageObject.getImageDimensions()))
-            self.mainWindow.lblZoomFactor.setText(str(self.currentImageObject.zoomFactor))
+            self.mainWindow.lblHeight.setText(str(self.currentImageObject.getImageDimensions()[0]))
+            self.mainWindow.lblWidth.setText(str(self.currentImageObject.getImageDimensions()[1]))
+            self.mainWindow.lblZoomFactor.setText(str(int(self.currentImageObject.zoomFactor * 100)))
+
+            isBinary = self.currentImageObject.isBinary()
+            if isBinary:
+                self.mainWindow.lblBinary.setText("Yes")
+            else:
+                self.mainWindow.lblBinary.setText("No")
 

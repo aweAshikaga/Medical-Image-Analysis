@@ -114,16 +114,28 @@ class Image(Observable):
         if self.img is not None:
             cv2.imwrite(path, self.img)
 
+    def isBinary(self):
+        """ Returns True if the image is binary in black and white (values 0 or 255).
+        """
+        if self.img is not None:
+            isBinary = np.all(np.logical_or(self.img == 0, self.img == 255))
+            if isBinary:
+                return True
+            else:
+                return False
+
     def addContrastCLAHE(self):
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(5, 5))
-        self.img = clahe.apply(self.img)
-        self.update_observers(self)
-        self.imgHistory.redo.clear()
+        if self.img is not None:
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(5, 5))
+            self.img = clahe.apply(self.img)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
 
     def addContrastCustom(self, value):
-        self.img = cv2.multiply(self.img, value)
-        self.update_observers(self)
-        self.imgHistory.redo.clear()
+        if self.img is not None:
+            self.img = cv2.multiply(self.img, value)
+            self.update_observers(self)
+            self.imgHistory.redo.clear()
 
     def getImageDimensions(self):
         if self.img is not None:
@@ -201,25 +213,6 @@ class Image(Observable):
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
-    def houghLinesP(self):
-        if self.img is not None:
-            #edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
-            #self.img = (255-edges)
-            #edges = (255-edges)
-            edges = self.img
-
-            minLineLength =  100
-            maxLineGap = 100
-            lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 255, minLineLength, maxLineGap)
-
-            print(lines[0])
-            for x in range(0, len(lines)):
-                for x1, y1, x2, y2 in lines[x]:
-                    cv2.line(self.img, (x1, y1), (x2, y2), 127, 1)
-
-            self.update_observers(self)
-            self.imgHistory.redo.clear()
-
     def houghLines(self):
         if self.img is not None:
             #edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
@@ -249,7 +242,7 @@ class Image(Observable):
         if self.img is not None:
             out, angles2, d = skimage.transform.hough_line(self._img)
 
-            out, angles2, d = skimage.transform.hough_line_peaks(out, angles2, d, threshold=0.3*np.amax(out), num_peaks=np.inf)
+            out, angles2, d = skimage.transform.hough_line_peaks(out, angles2, d, threshold=0.5*np.amax(out), num_peaks=np.inf)
 
             angles = []
             for rho, theta in zip(d, angles2):
