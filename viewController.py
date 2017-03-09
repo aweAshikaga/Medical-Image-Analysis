@@ -44,13 +44,12 @@ class ViewController(object):
         self.mainWindow.actionDilation.triggered.connect(self.addDilation)
         self.mainWindow.actionSkeletonization.triggered.connect(self.addSkeletonization)
         self.mainWindow.actionPorosity.triggered.connect(self.checkPorosity)
-        self.mainWindow.actionTest.triggered.connect(self.checkIfBinary)
+        self.mainWindow.actionTest.triggered.connect(self.addEdges)
         self.mainWindow.actionDefineAreas.triggered.connect(self.grabArea)
+        self.mainWindow.actionFiberDiameter.triggered.connect(self.findDiameters)
         self.mainWindow.lblImgDisplay.setMouseTracking(True)
         self.mainWindow.lblImgDisplay.mousePressEvent = self.getMousePositionOnLabel
         self.mainWindow.lblImgDisplay.mouseMoveEvent = self.getMousePositionOnLabel
-
-        #self.mainWindow.lblImgDisplay.paintEvent = self.paintEvent
         self.mainWindow.keyPressEvent = self.keyPressEvent
 
     def checkIfBinary(self):
@@ -221,7 +220,14 @@ class ViewController(object):
         """ Add skeletonization to the current image.
         """
         if self.currentImageObject:
-            self.currentImageObject.skeletonization()
+            if not self.currentImageObject.isBinary():
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Information)
+                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setText("The image must be binary to perform diameter analysis.")
+                msgbox.exec_()
+            else:
+                self.currentImageObject.skeletonization()
 
     def addTopHatTransformation(self):
         """ Add top hat transformation to the current image.
@@ -249,10 +255,41 @@ class ViewController(object):
 
     def addHoughLines(self):
         if self.currentImageObject:
-            angles = self.currentImageObject.houghLines2()
-            np.histogram(angles)
-            plt.hist(angles, bins=180, range=(- 90, 90))
-            plt.show()
+            if not self.currentImageObject.isBinary():
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Information)
+                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setText("The image must be binary to perform orientation analysis.")
+                msgbox.exec_()
+            else:
+                dialog = Ui.OrientationDialog()
+                dialog.exec_()
+
+                if dialog.result() == 1:
+                    threshold = dialog.doubleSpinBoxThreshold.value()
+                    maxLines = dialog.spinBoxMaxLines.value()
+
+                    if maxLines == 0:
+                        maxLines = np.inf
+
+                    angles = self.currentImageObject.houghLines2(threshold, maxLines)
+                    np.histogram(angles)
+                    plt.hist(angles, bins=180, range=(- 90, 90))
+                    plt.show()
+
+    def findDiameters(self):
+        if self.currentImageObject:
+            if not self.currentImageObject.isBinary():
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Information)
+                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setText("The image must be binary to perform diameter analysis.")
+                msgbox.exec_()
+            else:
+                diameter = self.currentImageObject.getDiameters()
+
+                plt.hist(diameter, bins=100, range=(0, 100))
+                plt.show()
 
     def addContrast(self):
         if self.currentImageObject:
@@ -397,6 +434,7 @@ class ViewController(object):
             isBinary = self.currentImageObject.isBinary()
             if isBinary:
                 self.mainWindow.lblBinary.setText("Yes")
+                #for action in self.mainWindow.actions
             else:
                 self.mainWindow.lblBinary.setText("No")
 

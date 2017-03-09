@@ -1,6 +1,11 @@
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
+
+def showOrientation(self, angles):
+    plt.hist(angles, bins=180, range=(- 90, 90))
+    plt.show()
 
 def skeletonization(img):
     size = np.size(img)

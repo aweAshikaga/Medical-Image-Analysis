@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 import math
 import collections
-import model.algorithms as algorithms
 import skimage.morphology
 import skimage.transform
 
@@ -238,11 +237,11 @@ class Image(Observable):
             self.imgHistory.redo.clear()
             return angles
 
-    def houghLines2(self):
+    def houghLines2(self, threshold, maxLines=np.inf):
         if self.img is not None:
             out, angles2, d = skimage.transform.hough_line(self._img)
 
-            out, angles2, d = skimage.transform.hough_line_peaks(out, angles2, d, threshold=0.5*np.amax(out), num_peaks=np.inf)
+            out, angles2, d = skimage.transform.hough_line_peaks(out, angles2, d, threshold=threshold*np.amax(out), num_peaks=maxLines)
 
             angles = []
             for rho, theta in zip(d, angles2):
@@ -255,9 +254,9 @@ class Image(Observable):
                 x0 = a * rho
                 y0 = b * rho
                 x1 = int(x0 + 5000 * (-b))
-                y1 = int(y0 + 5000 * (a))
+                y1 = int(y0 + 5000 * a)
                 x2 = int(x0 - 5000 * (-b))
-                y2 = int(y0 - 5000 * (a))
+                y2 = int(y0 - 5000 * a)
 
                 cv2.line(self._img, (x1, y1), (x2, y2), 127, 5)
 
@@ -367,3 +366,67 @@ class Image(Observable):
             porosity = blackPixelCount / totalPixelCount
             return porosity
 
+    def getDiameters(self):
+        """ Returns a numpy array with all measured diameters.
+        """
+        diameters = np.array([])
+
+        for currentRow in range(0, self.img.shape[0], 1):
+            row = self.img[currentRow, :]
+            b = np.where(row == 255)
+            b = b[0]
+
+            distances = []
+            distance = 1
+
+            if len(b) > 0:
+                start_index = b[0]
+            else:
+                start_index = 0
+
+            for i in range(len(b)):
+                if i > 0:
+                    if b[i - 1] + 1 == b[i]:
+                        distance += 1
+                    else:
+                        distances.append((start_index, distance))
+                        distance = 1
+                        start_index = b[i]
+
+                    if i == len(b) - 1:
+                        distances.append((start_index, distance))
+
+            for start, distance in distances:
+                currentIndex = currentRow
+                column = self.img[:, int(start + distance / 2)]
+                # print(column)
+                length = 0
+
+                reachedEdgeBottom = False
+                reachedEdgeTop = False
+
+                while not reachedEdgeBottom and column[currentIndex] == 255:
+                    length += 1
+                    currentIndex += 1
+
+                    if currentIndex > len(column) - 1:
+                        reachedEdgeBottom = True
+
+                if reachedEdgeBottom:
+                    currentIndex = currentRow
+                    length = 0
+                    while not reachedEdgeTop and column[currentIndex] == 255:
+                        length += 1
+                        currentIndex += 1
+
+                        if currentIndex > len(column) - 1:
+                            reachedEdgeTop = True
+
+                if reachedEdgeTop:
+                    diameters = np.append(diameters, distance)
+                else:
+                    alpha = np.arctan(distance / (2 * length))
+                    d = distance * np.cos(alpha)
+                    diameters = np.append(diameters, d)
+
+        return diameters
