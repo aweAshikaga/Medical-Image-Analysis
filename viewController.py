@@ -287,8 +287,8 @@ class ViewController(object):
                 msgbox.exec_()
             else:
                 diameter = self.currentImageObject.getDiameters()
-
-                plt.hist(diameter, bins=100, range=(0, 100))
+                print(max(diameter))
+                plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
                 plt.show()
 
     def addContrast(self):
@@ -341,7 +341,7 @@ class ViewController(object):
     def openFile(self):
         """ Open a file dialog and open the chosen file path.
         """
-        filePath = QFileDialog.getOpenFileName(self.mainWindow, 'Open file', '/home', '*.jpg; *.png; *.tiff')[0]
+        filePath = QFileDialog.getOpenFileName(self.mainWindow, 'Open file', '/home', '*.jpg; *.png; *.tiff; *.tif')[0]
 
         if filePath:
             # Get the filename from the whole file path
