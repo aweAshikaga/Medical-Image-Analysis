@@ -286,8 +286,8 @@ class ViewController(object):
                 msgbox.setText("The image must be binary to perform diameter analysis.")
                 msgbox.exec_()
             else:
-                diameter = self.currentImageObject.getDiameters()
-                print(max(diameter))
+                diameter = self.currentImageObject.getDiameters2()
+                print(sum(diameter))
                 plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
                 plt.show()
 

@@ -4,6 +4,7 @@ import math
 import collections
 import skimage.morphology
 import skimage.transform
+import time # For performance testing. Should be deleted later
 
 
 class Observable(object):
@@ -369,6 +370,9 @@ class Image(Observable):
     def getDiameters(self):
         """ Returns a numpy array with all measured diameters.
         """
+
+        start_time = time.time() # For performance measure. Can be deleted later
+
         diameters = np.array([])
 
         for currentRow in range(0, self.img.shape[0], 1):
@@ -429,4 +433,108 @@ class Image(Observable):
                     d = distance * np.cos(alpha)
                     diameters = np.append(diameters, d)
 
+        print("Execution time: " + str(time.time() - start_time))
+        return diameters
+
+    def getDiameters2(self):
+        """ Returns a numpy array with all measured diameters.
+        """
+
+        start_time = time.time() # For performance measure. Can be deleted later
+
+        diameters = np.array([])
+
+        for currentRow in range(0, self.img.shape[0], 1):
+            row = self.img[currentRow, :]
+            indicesWithWhiteValue = np.where(row == 255)[0]
+
+            distances = []
+            distance = 1
+
+            if len(indicesWithWhiteValue) > 0:
+                start_index = indicesWithWhiteValue[0]
+            else:
+                start_index = 0
+
+            # for i in range(len(indicesWithWhiteValue)):
+            #     if i > 0:
+            #         if indicesWithWhiteValue[i - 1] + 1 == indicesWithWhiteValue[i]:
+            #             distance += 1
+            #         else:
+            #             distances.append((start_index, distance))
+            #             distance = 1
+            #             start_index = indicesWithWhiteValue[i]
+            #
+            #         if i == len(indicesWithWhiteValue) - 1:
+            #             distances.append((start_index, distance))
+
+            if len(indicesWithWhiteValue) == 1:
+                distances.append((start_index, distance))
+            elif len(indicesWithWhiteValue) > 1:
+                previousIndex = indicesWithWhiteValue[0]
+
+                for index in indicesWithWhiteValue[1:]:
+                    if previousIndex + 1 == index:
+                        distance += 1
+                    else:
+                        distances.append((start_index, distance))
+                        distance = 1
+                        start_index = index
+
+                    if index == indicesWithWhiteValue[-1]:
+                        distances.append((start_index, distance))
+
+                    previousIndex = index
+
+            for start, distance in distances:
+                currentIndex = currentRow
+                column = self.img[:, int(start + distance / 2)]
+                # print(column)
+                length = 0
+
+                reachedEdgeBottom = False
+                reachedEdgeTop = False
+
+                # while not reachedEdgeBottom and column[currentIndex] == 255:
+                #     length += 1
+                #     currentIndex += 1
+                #
+                #     if currentIndex > len(column) - 1:
+                #         reachedEdgeBottom = True
+
+                for item in column[currentIndex:]:
+                    if item == 255:
+                        length += 1
+                    else:
+                        break
+                else:
+                    reachedEdgeBottom = True
+
+                if reachedEdgeBottom:
+                    currentIndex = currentRow
+                    length = 0
+                    # while not reachedEdgeTop and column[currentIndex] == 255:
+                    #     length += 1
+                    #     currentIndex -= 1
+                    #
+                    #     if currentIndex < 0:
+                    #         reachedEdgeTop = True
+
+                    for item in reversed(column[0:currentIndex]):
+                        if item == 255:
+                            length += 1
+                        else:
+                            break
+                    else:
+                        reachedEdgeTop = True
+
+
+                if reachedEdgeTop:
+                    diameters = np.append(diameters, distance)
+                else:
+                    alpha = np.arctan(distance / (2 * length))
+                    d = distance * np.cos(alpha)
+                    diameters = np.append(diameters, d)
+
+        print("Execution time: " + str(time.time() - start_time))
         return diameters
