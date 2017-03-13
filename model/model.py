@@ -372,79 +372,10 @@ class Image(Observable):
         """
 
         start_time = time.time() # For performance measure. Can be deleted later
-
         diameters = np.array([])
+        relevantRows = np.unique(np.where(self.img == 255)[0])
 
-        for currentRow in range(0, self.img.shape[0], 1):
-            row = self.img[currentRow, :]
-            b = np.where(row == 255)
-            b = b[0]
-
-            distances = []
-            distance = 1
-
-            if len(b) > 0:
-                start_index = b[0]
-            else:
-                start_index = 0
-
-            for i in range(len(b)):
-                if i > 0:
-                    if b[i - 1] + 1 == b[i]:
-                        distance += 1
-                    else:
-                        distances.append((start_index, distance))
-                        distance = 1
-                        start_index = b[i]
-
-                    if i == len(b) - 1:
-                        distances.append((start_index, distance))
-
-            for start, distance in distances:
-                currentIndex = currentRow
-                column = self.img[:, int(start + distance / 2)]
-                # print(column)
-                length = 0
-
-                reachedEdgeBottom = False
-                reachedEdgeTop = False
-
-                while not reachedEdgeBottom and column[currentIndex] == 255:
-                    length += 1
-                    currentIndex += 1
-
-                    if currentIndex > len(column) - 1:
-                        reachedEdgeBottom = True
-
-                if reachedEdgeBottom:
-                    currentIndex = currentRow
-                    length = 0
-                    while not reachedEdgeTop and column[currentIndex] == 255:
-                        length += 1
-                        currentIndex += 1
-
-                        if currentIndex > len(column) - 1:
-                            reachedEdgeTop = True
-
-                if reachedEdgeTop:
-                    diameters = np.append(diameters, distance)
-                else:
-                    alpha = np.arctan(distance / (2 * length))
-                    d = distance * np.cos(alpha)
-                    diameters = np.append(diameters, d)
-
-        print("Execution time: " + str(time.time() - start_time))
-        return diameters
-
-    def getDiameters2(self):
-        """ Returns a numpy array with all measured diameters.
-        """
-
-        start_time = time.time() # For performance measure. Can be deleted later
-
-        diameters = np.array([])
-
-        for currentRow in range(0, self.img.shape[0], 1):
+        for currentRow in relevantRows:
             row = self.img[currentRow, :]
             indicesWithWhiteValue = np.where(row == 255)[0]
 
@@ -455,18 +386,6 @@ class Image(Observable):
                 start_index = indicesWithWhiteValue[0]
             else:
                 start_index = 0
-
-            # for i in range(len(indicesWithWhiteValue)):
-            #     if i > 0:
-            #         if indicesWithWhiteValue[i - 1] + 1 == indicesWithWhiteValue[i]:
-            #             distance += 1
-            #         else:
-            #             distances.append((start_index, distance))
-            #             distance = 1
-            #             start_index = indicesWithWhiteValue[i]
-            #
-            #         if i == len(indicesWithWhiteValue) - 1:
-            #             distances.append((start_index, distance))
 
             if len(indicesWithWhiteValue) == 1:
                 distances.append((start_index, distance))
@@ -487,47 +406,26 @@ class Image(Observable):
                     previousIndex = index
 
             for start, distance in distances:
-                currentIndex = currentRow
                 column = self.img[:, int(start + distance / 2)]
-                # print(column)
                 length = 0
 
                 reachedEdgeBottom = False
                 reachedEdgeTop = False
 
-                # while not reachedEdgeBottom and column[currentIndex] == 255:
-                #     length += 1
-                #     currentIndex += 1
-                #
-                #     if currentIndex > len(column) - 1:
-                #         reachedEdgeBottom = True
-
-                for item in column[currentIndex:]:
-                    if item == 255:
-                        length += 1
-                    else:
-                        break
+                blackValues = np.where(column[currentRow:] == 0)[0]
+                if blackValues.size > 0:
+                    length = min(blackValues)
                 else:
                     reachedEdgeBottom = True
 
                 if reachedEdgeBottom:
-                    currentIndex = currentRow
-                    length = 0
-                    # while not reachedEdgeTop and column[currentIndex] == 255:
-                    #     length += 1
-                    #     currentIndex -= 1
-                    #
-                    #     if currentIndex < 0:
-                    #         reachedEdgeTop = True
-
-                    for item in reversed(column[0:currentIndex]):
-                        if item == 255:
-                            length += 1
-                        else:
-                            break
+                    blackValues = np.where(column[0:currentRow] == 0)[0]
+                    print(blackValues)
+                    if blackValues.size > 0:
+                        length = currentRow - max(blackValues)
+                        print(length)
                     else:
                         reachedEdgeTop = True
-
 
                 if reachedEdgeTop:
                     diameters = np.append(diameters, distance)
