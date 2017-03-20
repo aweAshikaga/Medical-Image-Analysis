@@ -59,7 +59,7 @@ class History(object):
 
 
 class Image(Observable):
-    def __init__(self, imgData = None):
+    def __init__(self, imgData = None, scale = 0):
         Observable.__init__(self)
 
         if imgData is not None:
@@ -68,6 +68,7 @@ class Image(Observable):
             self._img = None
 
         self._zoomFactor = 1
+        self.scale = scale
         self.imgHistory = History()
 
     @property
@@ -372,39 +373,55 @@ class Image(Observable):
         """
 
         start_time = time.time() # For performance measure. Can be deleted later
-        diameters = np.array([])
+        diameters = np.array([]) # return value. Array of all measured diameters.
+
+        # Find all rows with a least one white pixel in it
         relevantRows = np.unique(np.where(self.img == 255)[0])
 
         for currentRow in relevantRows:
+            # Extract the pixel values of the current row.
             row = self.img[currentRow, :]
+
+            rowHasOnlyWhiteValues = np.all(row == 255)
+
+            # Create an array which stores the indices of all white pixels of the current row.
             indicesWithWhiteValue = np.where(row == 255)[0]
 
+            # Create a list to store tuples of start index and distance of consecutive white pixels.
             distances = []
+
+            # Initialize a variable which will store the distance of one section of white pixels.
             distance = 1
 
+            # Check if there is at least one white pixel in the current row.
             if len(indicesWithWhiteValue) > 0:
                 start_index = indicesWithWhiteValue[0]
             else:
                 start_index = 0
 
+            # Find the distance of each section of white pixels in horizontal direction.
             if len(indicesWithWhiteValue) == 1:
+                # Trivial case: Only one white pixel: Save the index of that white pixel with a length of one.
                 distances.append((start_index, distance))
             elif len(indicesWithWhiteValue) > 1:
+                # remember the index of the previously checked white pixel.
                 previousIndex = indicesWithWhiteValue[0]
 
                 for index in indicesWithWhiteValue[1:]:
                     if previousIndex + 1 == index:
                         distance += 1
+
+                        # When the last pixel is reached, append the distance nevertheless.
+                        if index == indicesWithWhiteValue[-1]:
+                            distances.append((start_index, distance))
                     else:
                         distances.append((start_index, distance))
                         distance = 1
                         start_index = index
 
-                    if index == indicesWithWhiteValue[-1]:
-                        distances.append((start_index, distance))
-
                     previousIndex = index
 
+            # Find the distances in vertical direction.
             for start, distance in distances:
                 column = self.img[:, int(start + distance / 2)]
                 length = 0
@@ -418,7 +435,8 @@ class Image(Observable):
                 else:
                     reachedEdgeBottom = True
 
-                if reachedEdgeBottom:
+                if reachedEdgeBottom or rowHasOnlyWhiteValues:
+                    lengthToBottom = length
                     blackValues = np.where(column[0:currentRow] == 0)[0]
                     print(blackValues)
                     if blackValues.size > 0:
@@ -427,8 +445,14 @@ class Image(Observable):
                     else:
                         reachedEdgeTop = True
 
-                if reachedEdgeTop:
+                if reachedEdgeTop and not rowHasOnlyWhiteValues:
                     diameters = np.append(diameters, distance)
+                elif rowHasOnlyWhiteValues and not reachedEdgeTop:
+                    diameters = np.append(diameters, length + lengthToBottom - 1)
+                elif reachedEdgeTop and rowHasOnlyWhiteValues:
+                    # if there are only white values in horizontal and vertical direction,
+                    # there cannot determine the actual diameter of the fiber. Therefore pass
+                    pass
                 else:
                     alpha = np.arctan(distance / (2 * length))
                     d = distance * np.cos(alpha)

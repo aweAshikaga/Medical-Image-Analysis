@@ -2,8 +2,9 @@ import view.Ui as Ui
 import model.model as model
 import os
 import numpy as np
+import math
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from PyQt5.QtGui import QPixmap, QImage, QGuiApplication, QPainter, QColor
 from PyQt5.QtCore import Qt
 
@@ -14,6 +15,7 @@ class ViewController(object):
         self.connectActions()
 
         self._isDefiningArea = False
+        self._isDefiningScale = False
         self._initialAreaPoint = (-1, -1)
         self._endAreaPoint = (-1, -1)
 
@@ -46,9 +48,11 @@ class ViewController(object):
         self.mainWindow.actionPorosity.triggered.connect(self.checkPorosity)
         self.mainWindow.actionTest.triggered.connect(self.addEdges)
         self.mainWindow.actionDefineAreas.triggered.connect(self.grabArea)
+        self.mainWindow.actionDefineScale.triggered.connect(self.grabScale)
         self.mainWindow.actionFiberDiameter.triggered.connect(self.findDiameters)
         self.mainWindow.lblImgDisplay.setMouseTracking(True)
         self.mainWindow.lblImgDisplay.mousePressEvent = self.getMousePositionOnLabel
+        self.mainWindow.lblImgDisplay.mouseReleaseEvent = self.getMousePositionOnLabel
         self.mainWindow.lblImgDisplay.mouseMoveEvent = self.getMousePositionOnLabel
         self.mainWindow.keyPressEvent = self.keyPressEvent
 
@@ -63,12 +67,13 @@ class ViewController(object):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
-            self.cancelDefineArea()
+            self.cancelDefineAreaOrScale()
 
-    def cancelDefineArea(self):
+    def cancelDefineAreaOrScale(self):
         self.mainWindow.menubar.setEnabled(True)
         QGuiApplication.setOverrideCursor(Qt.ArrowCursor)
         self._isDefiningArea = False
+        self._isDefiningScale = False
         self._initialAreaPoint = (-1, -1)
         self._endAreaPoint = (-1, -1)
         self.displayImage()
@@ -87,13 +92,32 @@ class ViewController(object):
             qp.end()
             self.mainWindow.lblImgDisplay.repaint()
 
+    def drawLineOnLabel(self, point1, point2):
+        if self._isDefiningScale and self.currentImageObject and self._initialAreaPoint != (-1, -1):
+            self.displayImage()
+            qp = QPainter()
+            qp.begin(self.mainWindow.lblImgDisplay.pixmap())
+            qp.setPen(QColor(255, 0, 0))
+            x1 = point1[0]
+            y1 = point1[1]
+            x2 = point2[0]
+            y2 = point2[1]
+            qp.drawLine(x1, y1, x2, y2)
+            qp.end()
+            self.mainWindow.lblImgDisplay.repaint()
+
     def grabArea(self):
         self.mainWindow.menubar.setEnabled(False)
         QGuiApplication.setOverrideCursor(Qt.CrossCursor)
         self._isDefiningArea = True
 
+    def grabScale(self):
+        self.mainWindow.menubar.setEnabled(False)
+        QGuiApplication.setOverrideCursor(Qt.CrossCursor)
+        self._isDefiningScale = True
+
     def getMousePositionOnLabel(self, event):
-        if self._isDefiningArea:
+        if self._isDefiningArea or self._isDefiningScale:
             x = event.pos().x()
             y = event.pos().y()
 
@@ -106,55 +130,100 @@ class ViewController(object):
             elif self._initialAreaPoint != (-1, -1) and event.button() == 0:
                 # The rect angle is currently drawing and no button has been pressed.
                 self._endAreaPoint = (x, y)
-                self .drawRectOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
+
+                if self._isDefiningArea:
+                    self .drawRectOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
+                elif self._isDefiningScale:
+                    self.drawLineOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
             elif event.button() == 2:
                 # Right mouse button has been pressed to cancel the process.
-                self.cancelDefineArea()
+                self.cancelDefineAreaOrScale()
             elif self._initialAreaPoint != (-1, -1) and event.button() == 1:
-                # Left mouse button was pressed for the second time while defining area.
+                # Left mouse button was released
                 self.mainWindow.menubar.setEnabled(True)
                 QGuiApplication.setOverrideCursor(Qt.ArrowCursor)
-                self.drawRectOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
-                self._isDefiningArea = False
-                self.mainWindow.lblImgDisplay.repaint()
 
-                # Create new tab with defined area
-                initPoint = self.convertZoomedPointToOriginalPoint(pixmapInitialAreaPoint)
-                endPoint = self.convertZoomedPointToOriginalPoint(pixmapEndAreaPoint)
-                startX = int(initPoint[0])
-                startY = int(initPoint[1])
-                endX = int(endPoint[0])
-                endY = int(endPoint[1])
+                if self._isDefiningScale:
+                    self.drawLineOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
+                    self._isDefiningScale = False
+                    self.mainWindow.lblImgDisplay.repaint()
 
-                if startX > endX:
-                    startX, endX = endX, startX
+                    um, ok = QInputDialog.getInt(self.mainWindow, "Scale", "um: ", 100)
 
-                if startY > endY:
-                    startY, endY = endY, startY
+                    if ok:
+                        print("ok")
+                        initPoint = self.convertZoomedPointToOriginalPoint(pixmapInitialAreaPoint)
+                        endPoint = self.convertZoomedPointToOriginalPoint(pixmapEndAreaPoint)
+                        startX = int(initPoint[0])
+                        startY = int(initPoint[1])
+                        endX = int(endPoint[0])
+                        endY = int(endPoint[1])
 
-                imageDataOfArea = self.currentImageObject.img[startY:endY, startX:endX]
+                        if startX > endX:
+                            startX, endX = endX, startX
 
-                # Add a new tab (with filename as caption) and remember its index.
-                newTabBarIndex = self.mainWindow.tabBar.addTab("new")
+                        if startY > endY:
+                            startY, endY = endY, startY
 
-                # Make the new tab the active tab.
-                self.mainWindow.tabBar.setCurrentIndex(newTabBarIndex)
+                        distance = math.sqrt(math.pow(endX-startX, 2) + math.pow(endY-startY, 2))
+                        scale = um / distance
 
-                # Create a new image object for the new tab.
-                newImage = model.Image(imageDataOfArea)
+                        self.currentImageObject.scale = scale
 
-                # Register this viewController as an observer to the image object.
-                newImage.register(self)
+                        # Update the image, so that it shows on screen.
+                        self.displayImage()
 
-                # Save the reference to the image object in the tab data of the newly created tab.
-                self.mainWindow.tabBar.setTabData(newTabBarIndex, newImage)
+                        # Set the coordinates responsible for defining the area back to their basic state.
+                        self._initialAreaPoint = (-1, -1)
+                        self._endAreaPoint = (-1, -1)
 
-                # Update the image, so that it shows on screen.
-                self.displayImage()
+                        self.update()
 
-                # Set the coordinates responsible for defining the area back to their basic state.
-                self._initialAreaPoint = (-1, -1)
-                self._endAreaPoint = (-1, -1)
+                if self._isDefiningArea:
+                    self.drawRectOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
+                    self._isDefiningArea = False
+                    self.mainWindow.lblImgDisplay.repaint()
+
+                    # Create new tab with defined area
+                    initPoint = self.convertZoomedPointToOriginalPoint(pixmapInitialAreaPoint)
+                    endPoint = self.convertZoomedPointToOriginalPoint(pixmapEndAreaPoint)
+                    startX = int(initPoint[0])
+                    startY = int(initPoint[1])
+                    endX = int(endPoint[0])
+                    endY = int(endPoint[1])
+
+                    if startX > endX:
+                        startX, endX = endX, startX
+
+                    if startY > endY:
+                        startY, endY = endY, startY
+
+                    imageDataOfArea = self.currentImageObject.img[startY:endY, startX:endX]
+                    scaleOfCurrentImage = self.currentImageObject.scale
+
+                    # Add a new tab (with filename as caption) and remember its index.
+                    newTabBarIndex = self.mainWindow.tabBar.addTab("new")
+
+                    # Make the new tab the active tab.
+                    self.mainWindow.tabBar.setCurrentIndex(newTabBarIndex)
+
+                    # Create a new image object for the new tab.
+                    newImage = model.Image(imageDataOfArea, scaleOfCurrentImage)
+
+                    # Register this viewController as an observer to the image object.
+                    newImage.register(self)
+
+                    # Save the reference to the image object in the tab data of the newly created tab.
+                    self.mainWindow.tabBar.setTabData(newTabBarIndex, newImage)
+
+                    # Update the image, so that it shows on screen.
+                    self.displayImage()
+
+                    # Set the coordinates responsible for defining the area back to their basic state.
+                    self._initialAreaPoint = (-1, -1)
+                    self._endAreaPoint = (-1, -1)
+
+                    self.update()
 
     def convertZoomedPointToOriginalPoint(self, zoomedPoint):
         zoomFactor = self.currentImageObject.zoomFactor
@@ -430,6 +499,7 @@ class ViewController(object):
             self.mainWindow.lblHeight.setText(str(self.currentImageObject.getImageDimensions()[0]))
             self.mainWindow.lblWidth.setText(str(self.currentImageObject.getImageDimensions()[1]))
             self.mainWindow.lblZoomFactor.setText(str(int(self.currentImageObject.zoomFactor * 100)))
+            self.mainWindow.lblScale.setText("{0:.2f}".format(self.currentImageObject.scale))
 
             isBinary = self.currentImageObject.isBinary()
             if isBinary:
