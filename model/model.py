@@ -70,6 +70,8 @@ class Image(Observable):
         self._zoomFactor = 1
         self.scale = scale
         self.imgHistory = History()
+        self._diameters = np.array([])
+        self._angles = []
 
     @property
     def img(self):
@@ -245,12 +247,12 @@ class Image(Observable):
 
             out, angles2, d = skimage.transform.hough_line_peaks(out, angles2, d, threshold=threshold*np.amax(out), num_peaks=maxLines)
 
-            angles = []
+            angles = np.array([])
             for rho, theta in zip(d, angles2):
                 print(rho)
                 print(np.rad2deg(theta))
                 print("----")
-                angles.append(theta * (180 / math.pi))
+                angles = np.append(angles, (theta * (180 / math.pi)))
                 a = np.cos(theta)
                 b = np.sin(theta)
                 x0 = a * rho
@@ -264,6 +266,7 @@ class Image(Observable):
 
             self.update_observers(self)
             self.imgHistory.redo.clear()
+            self._angles = angles
             return angles
 
     def watershedSegmentation(self):
@@ -371,92 +374,107 @@ class Image(Observable):
     def getDiameters(self):
         """ Returns a numpy array with all measured diameters.
         """
+        if self.img is not None:
+            start_time = time.time() # For performance measure. Can be deleted later
+            diameters = np.array([]) # return value. Array of all measured diameters.
 
-        start_time = time.time() # For performance measure. Can be deleted later
-        diameters = np.array([]) # return value. Array of all measured diameters.
+            # Find all rows with a least one white pixel in it
+            relevantRows = np.unique(np.where(self.img == 255)[0])
 
-        # Find all rows with a least one white pixel in it
-        relevantRows = np.unique(np.where(self.img == 255)[0])
+            for currentRow in relevantRows:
+                # Extract the pixel values of the current row.
+                row = self.img[currentRow, :]
 
-        for currentRow in relevantRows:
-            # Extract the pixel values of the current row.
-            row = self.img[currentRow, :]
+                rowHasOnlyWhiteValues = np.all(row == 255)
 
-            rowHasOnlyWhiteValues = np.all(row == 255)
+                # Create an array which stores the indices of all white pixels of the current row.
+                indicesWithWhiteValue = np.where(row == 255)[0]
 
-            # Create an array which stores the indices of all white pixels of the current row.
-            indicesWithWhiteValue = np.where(row == 255)[0]
+                # Create a list to store tuples of start index and distance of consecutive white pixels.
+                distances = []
 
-            # Create a list to store tuples of start index and distance of consecutive white pixels.
-            distances = []
+                # Initialize a variable which will store the distance of one section of white pixels.
+                distance = 1
 
-            # Initialize a variable which will store the distance of one section of white pixels.
-            distance = 1
+                # Check if there is at least one white pixel in the current row.
+                if len(indicesWithWhiteValue) > 0:
+                    start_index = indicesWithWhiteValue[0]
+                else:
+                    start_index = 0
 
-            # Check if there is at least one white pixel in the current row.
-            if len(indicesWithWhiteValue) > 0:
-                start_index = indicesWithWhiteValue[0]
-            else:
-                start_index = 0
+                # Find the distance of each section of white pixels in horizontal direction.
+                if len(indicesWithWhiteValue) == 1:
+                    # Trivial case: Only one white pixel: Save the index of that white pixel with a length of one.
+                    distances.append((start_index, distance))
+                elif len(indicesWithWhiteValue) > 1:
+                    # remember the index of the previously checked white pixel.
+                    previousIndex = indicesWithWhiteValue[0]
 
-            # Find the distance of each section of white pixels in horizontal direction.
-            if len(indicesWithWhiteValue) == 1:
-                # Trivial case: Only one white pixel: Save the index of that white pixel with a length of one.
-                distances.append((start_index, distance))
-            elif len(indicesWithWhiteValue) > 1:
-                # remember the index of the previously checked white pixel.
-                previousIndex = indicesWithWhiteValue[0]
+                    for index in indicesWithWhiteValue[1:]:
+                        if previousIndex + 1 == index:
+                            distance += 1
 
-                for index in indicesWithWhiteValue[1:]:
-                    if previousIndex + 1 == index:
-                        distance += 1
-
-                        # When the last pixel is reached, append the distance nevertheless.
-                        if index == indicesWithWhiteValue[-1]:
+                            # When the last pixel is reached, append the distance nevertheless.
+                            if index == indicesWithWhiteValue[-1]:
+                                distances.append((start_index, distance))
+                        else:
                             distances.append((start_index, distance))
-                    else:
-                        distances.append((start_index, distance))
-                        distance = 1
-                        start_index = index
+                            distance = 1
+                            start_index = index
 
-                    previousIndex = index
+                        previousIndex = index
 
-            # Find the distances in vertical direction.
-            for start, distance in distances:
-                column = self.img[:, int(start + distance / 2)]
-                length = 0
+                # Find the distances in vertical direction.
+                for start, distance in distances:
+                    column = self.img[:, int(start + distance / 2)]
+                    length = 0
 
-                reachedEdgeBottom = False
-                reachedEdgeTop = False
+                    reachedEdgeBottom = False
+                    reachedEdgeTop = False
 
-                blackValues = np.where(column[currentRow:] == 0)[0]
-                if blackValues.size > 0:
-                    length = min(blackValues)
-                else:
-                    reachedEdgeBottom = True
-
-                if reachedEdgeBottom or rowHasOnlyWhiteValues:
-                    lengthToBottom = length
-                    blackValues = np.where(column[0:currentRow] == 0)[0]
-                    print(blackValues)
+                    blackValues = np.where(column[currentRow:] == 0)[0]
                     if blackValues.size > 0:
-                        length = currentRow - max(blackValues)
-                        print(length)
+                        length = min(blackValues)
                     else:
-                        reachedEdgeTop = True
+                        reachedEdgeBottom = True
 
-                if reachedEdgeTop and not rowHasOnlyWhiteValues:
-                    diameters = np.append(diameters, distance)
-                elif rowHasOnlyWhiteValues and not reachedEdgeTop:
-                    diameters = np.append(diameters, length + lengthToBottom - 1)
-                elif reachedEdgeTop and rowHasOnlyWhiteValues:
-                    # if there are only white values in horizontal and vertical direction,
-                    # there cannot determine the actual diameter of the fiber. Therefore pass
-                    pass
-                else:
-                    alpha = np.arctan(distance / (2 * length))
-                    d = distance * np.cos(alpha)
-                    diameters = np.append(diameters, d)
+                    if reachedEdgeBottom or rowHasOnlyWhiteValues:
+                        lengthToBottom = length
+                        blackValues = np.where(column[0:currentRow] == 0)[0]
+                        print(blackValues)
+                        if blackValues.size > 0:
+                            length = currentRow - max(blackValues)
+                            print(length)
+                        else:
+                            reachedEdgeTop = True
 
-        print("Execution time: " + str(time.time() - start_time))
-        return diameters
+                    if reachedEdgeTop and not rowHasOnlyWhiteValues:
+                        diameters = np.append(diameters, distance)
+                    elif rowHasOnlyWhiteValues and not reachedEdgeTop:
+                        diameters = np.append(diameters, length + lengthToBottom - 1)
+                    elif reachedEdgeTop and rowHasOnlyWhiteValues:
+                        # if there are only white values in horizontal and vertical direction,
+                        # there cannot determine the actual diameter of the fiber. Therefore pass
+                        pass
+                    else:
+                        alpha = np.arctan(distance / (2 * length))
+                        d = distance * np.cos(alpha)
+                        diameters = np.append(diameters, d)
+
+            print("Execution time: " + str(time.time() - start_time))
+
+            if self.scale != 0:
+                diameters = np.multiply(diameters, self.scale)
+
+            self._diameters = diameters
+            return diameters
+
+    def exportDiametersToCSV(self, filePath):
+        if self.img is not None:
+            if len(self._diameters) > 0:
+                np.savetxt(filePath, self._diameters[None, :], delimiter="\r\n", fmt="%.0f", header="Diameter")
+
+    def exportAnglesToCSV(self, filePath):
+        if self.img is not None:
+            if len(self._angles) > 0:
+                np.savetxt(filePath, self._angles[None, :], delimiter="\r\n", fmt="%.0f", header="Angles")

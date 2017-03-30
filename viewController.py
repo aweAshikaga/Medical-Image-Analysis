@@ -4,6 +4,7 @@ import os
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 from PyQt5.QtGui import QPixmap, QImage, QGuiApplication, QPainter, QColor
 from PyQt5.QtCore import Qt
@@ -50,6 +51,8 @@ class ViewController(object):
         self.mainWindow.actionDefineAreas.triggered.connect(self.grabArea)
         self.mainWindow.actionDefineScale.triggered.connect(self.grabScale)
         self.mainWindow.actionFiberDiameter.triggered.connect(self.findDiameters)
+        self.mainWindow.actionExport_diameters.triggered.connect(self.exportDiametersToCSV)
+        self.mainWindow.actionExport_orientation_angles.triggered.connect(self.exportAnglesToCSV)
         self.mainWindow.lblImgDisplay.setMouseTracking(True)
         self.mainWindow.lblImgDisplay.mousePressEvent = self.getMousePositionOnLabel
         self.mainWindow.lblImgDisplay.mouseReleaseEvent = self.getMousePositionOnLabel
@@ -335,16 +338,31 @@ class ViewController(object):
                 dialog.exec_()
 
                 if dialog.result() == 1:
-                    threshold = dialog.doubleSpinBoxThreshold.value()
-                    maxLines = dialog.spinBoxMaxLines.value()
+                                threshold = dialog.doubleSpinBoxThreshold.value()
+                                maxLines = dialog.spinBoxMaxLines.value()
 
-                    if maxLines == 0:
-                        maxLines = np.inf
+                                if maxLines == 0:
+                                    maxLines = np.inf
 
-                    angles = self.currentImageObject.houghLines2(threshold, maxLines)
-                    np.histogram(angles)
-                    plt.hist(angles, bins=180, range=(- 90, 90))
-                    plt.show()
+                                angles = self.currentImageObject.houghLines2(threshold, maxLines)
+                                #np.histogram(angles)
+                                weights = np.ones_like(angles) / len(angles)
+                                plt.style.use("ggplot")
+
+                                plt.hist(angles, bins=60, range=(- 90, 90), weights=weights, rwidth=0.8)
+                                plt.xlabel("Orientation in degrees")
+                                plt.ylabel("Frequency")
+                                plt.xticks([x for x in range(-90, 90+1, 30)])
+                                plt.title("Fiber Orientation")
+                                formatter = FuncFormatter(self.toPercent)
+                                plt.gca().yaxis.set_major_formatter(formatter)
+
+                                plt.show()
+
+    def toPercent(self, y, position):
+        s = str(100 * y)
+
+        return s + '%'
 
     def findDiameters(self):
         if self.currentImageObject:
@@ -357,7 +375,31 @@ class ViewController(object):
             else:
                 diameter = self.currentImageObject.getDiameters()
                 print(sum(diameter))
-                plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
+                #np.histogram(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
+                weights = np.ones_like(diameter) / len(diameter)
+                print(type(weights))
+                a = plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
+                maximum = max(a[0])
+
+                # Find the first value that is equal or bigger than 1% of the maximum to use it as x-axis limit.
+                y_x_values = list(zip(a[0], a[1]))
+                for y, x in reversed(y_x_values):
+                    if y >= 0.01 * maximum:
+                        right_value = x
+                        break
+
+                print(maximum)
+                print(right_value)
+                plt.clf()
+                plt.style.use("ggplot")
+                #plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter)) + 1), rwidth=0.8)
+                #plt.show()
+                plt.clf()
+                #plt.hist(diameter, bins="doane", range=(0, right_value), rwidth=0.8)
+                plt.hist(diameter, bins="doane", range=(0, right_value+5), rwidth=0.8)
+
+                plt.xlabel("Fiber diameter")
+                plt.ylabel("Frequency")
                 plt.show()
 
     def addContrast(self):
@@ -448,6 +490,35 @@ class ViewController(object):
 
                 # Save the image to the new filename.
                 self.currentImageObject.saveImage(filePath)
+
+    def exportDiametersToCSV(self):
+        if self.currentImageObject:
+            if len(self.currentImageObject._diameters) == 0:
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Information)
+                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setText("Diameter analysis has not been executed yet for this image.")
+                msgbox.exec_()
+            else:
+                filePath = QFileDialog.getSaveFileName(self.mainWindow, "Export Diameter Data", "/home", filter="*.csv")[0]
+
+                if filePath:
+                    self.currentImageObject.exportDiametersToCSV(filePath)
+
+
+    def exportAnglesToCSV(self):
+        if self.currentImageObject:
+            if len(self.currentImageObject._angles) == 0:
+                msgbox = QMessageBox()
+                msgbox.setIcon(QMessageBox.Information)
+                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setText("Orientation analysis has not been executed yet for this image.")
+                msgbox.exec_()
+            else:
+                filePath = QFileDialog.getSaveFileName(self.mainWindow, "Export Orientation Angles Data", "/home", filter="*.csv")[0]
+
+                if filePath:
+                    self.currentImageObject.exportAnglesToCSV(filePath)
 
     def displayImage(self):
         """ Display the image model of the current tab with its zoom factor on the QLabel.
