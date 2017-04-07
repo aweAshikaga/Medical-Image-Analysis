@@ -59,7 +59,7 @@ class History(object):
 
 
 class Image(Observable):
-    def __init__(self, imgData = None, scale = 0):
+    def __init__(self, imgData=None, scale=0):
         Observable.__init__(self)
 
         if imgData is not None:
@@ -76,13 +76,6 @@ class Image(Observable):
     @property
     def img(self):
         return self._img
-
-    @img.setter
-    def img(self, value):
-        if self.img is not None:
-            self.imgHistory.undo.append(self.img)
-
-        self._img = value
 
     @property
     def zoomFactor(self):
@@ -101,157 +94,142 @@ class Image(Observable):
         self.update_observers(self)
 
     def undo(self):
-        self._img = self.imgHistory.goBackwards(self.img)
+        self._img = self.imgHistory.goBackwards(self._img)
         self.update_observers(self)
 
     def redo(self):
-        self._img = self.imgHistory.goForward(self.img)
+        self._img = self.imgHistory.goForward(self._img)
         self.update_observers(self)
 
     def openFile(self, filename):
-        self.img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        self._img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
         self._zoomFactor = 1
         self.update_observers(self)
 
     def saveImage(self, path):
-        if self.img is not None:
-            cv2.imwrite(path, self.img)
+        if self._img is not None:
+            cv2.imwrite(path, self._img)
 
     def isBinary(self):
         """ Returns True if the image is binary in black and white (values 0 or 255).
         """
-        if self.img is not None:
-            isBinary = np.all(np.logical_or(self.img == 0, self.img == 255))
+        if self._img is not None:
+            isBinary = np.all(np.logical_or(self._img == 0, self._img == 255))
             if isBinary:
                 return True
             else:
                 return False
 
     def addContrastCLAHE(self):
-        if self.img is not None:
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(5, 5))
-            self.img = clahe.apply(self.img)
+            self._img = clahe.apply(self._img)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def addContrastCustom(self, value):
-        if self.img is not None:
-            self.img = cv2.multiply(self.img, value)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.multiply(self._img, value)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def getImageDimensions(self):
-        if self.img is not None:
-            return self.img.shape
+        if self._img is not None:
+            return self._img.shape
         else:
             return 0, 0
 
     def getZoomedImage(self):
         if self._zoomFactor == 1:
-            return self.img
+            return self._img
         elif self._zoomFactor > 1:
-            return cv2.resize(self.img,None,fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_CUBIC)
+            return cv2.resize(self._img, None, fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_CUBIC)
         elif 0 < self._zoomFactor < 1:
-            return cv2.resize(self.img, None, fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_AREA)
+            return cv2.resize(self._img, None, fx=self._zoomFactor, fy=self._zoomFactor, interpolation=cv2.INTER_AREA)
 
     def filterSmoothingAverage(self, kernelSize):
-        if self.img is not None:
-            self.img = cv2.blur(self.img, kernelSize)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.blur(self._img, kernelSize)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def filterSmoothingMedian(self, kernelSize):
-        if self.img is not None:
-            self.img = cv2.medianBlur(self.img, kernelSize)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.medianBlur(self._img, kernelSize)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def filterSmoothingGaussian(self, kernelSize):
-        if self.img is not None:
-            self.img = cv2.GaussianBlur(self.img, kernelSize, 0)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.GaussianBlur(self._img, kernelSize, 0)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def derivativeLaPlace(self):
-        if self.img is not None:
-            self.img = cv2.Laplacian(self.img, cv2.CV_8U)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.Laplacian(self._img, cv2.CV_8U)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def derivativeSobel(self):
-        if self.img is not None:
-            self.img = cv2.Sobel(self.img, cv2.CV_8U, 1, 0, ksize=5)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.Sobel(self._img, cv2.CV_8U, 1, 0, ksize=5)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def thresholdManual(self, threshold):
-        if self.img is not None:
-            self.img = cv2.threshold(self.img, threshold, 255, cv2.THRESH_BINARY)[1]
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.threshold(self._img, threshold, 255, cv2.THRESH_BINARY)[1]
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def thresholdAdaptive(self):
-        if self.img is not None:
-            self.img = cv2.adaptiveThreshold(self.img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 501, 2)
-            #self.img = cv2.adaptiveThreshold(self.img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 101, 2)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.adaptiveThreshold(self._img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 501, 2)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def thresholdOtsu(self):
-        if self.img is not None:
-            self.img = cv2.threshold(self.img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.threshold(self._img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def sharpen(self):
-        if self.img is not None:
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
             kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-            self.img = cv2.filter2D(self.img, -1, kernel)
+            self._img = cv2.filter2D(self._img, -1, kernel)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def edges(self):
-        if self.img is not None:
-            self.img = cv2.Canny(self.img, 50, 150, apertureSize=3)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            self._img = cv2.Canny(self._img, 50, 150, apertureSize=3)
             self.update_observers(self)
             self.imgHistory.redo.clear()
-
-    def houghLines(self):
-        if self.img is not None:
-            #edges = cv2.Canny(self.img, 50, 150, apertureSize=3)
-            edges = self.img
-            angles = []
-
-            lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=300)
-            for x in range(0, len(lines)):
-                for rho, theta in lines[x]:
-                    angles.append(theta * (180/math.pi))
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a * rho
-                    y0 = b * rho
-                    x1 = int(x0 + 5000 * (-b))
-                    y1 = int(y0 + 5000 * (a))
-                    x2 = int(x0 - 5000 * (-b))
-                    y2 = int(y0 - 5000 * (a))
-
-                    cv2.line(self.img, (x1, y1), (x2, y2), 127, 2)
-
-            self.update_observers(self)
-            self.imgHistory.redo.clear()
-            return angles
 
     def houghLines2(self, threshold, maxLines=np.inf):
-        if self.img is not None:
-            out, angles2, d = skimage.transform.hough_line(self._img)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
 
+            out, angles2, d = skimage.transform.hough_line(self._img)
             out, angles2, d = skimage.transform.hough_line_peaks(out, angles2, d, threshold=threshold*np.amax(out), num_peaks=maxLines)
 
             angles = np.array([])
+
             for rho, theta in zip(d, angles2):
-                print(rho)
-                print(np.rad2deg(theta))
-                print("----")
                 angles = np.append(angles, (theta * (180 / math.pi)))
                 a = np.cos(theta)
                 b = np.sin(theta)
@@ -261,8 +239,7 @@ class Image(Observable):
                 y1 = int(y0 + 5000 * a)
                 x2 = int(x0 - 5000 * (-b))
                 y2 = int(y0 - 5000 * a)
-
-                cv2.line(self._img, (x1, y1), (x2, y2), 127, 5)
+                cv2.line(self._img, (x1, y1), (x2, y2), 127, 2)
 
             self.update_observers(self)
             self.imgHistory.redo.clear()
@@ -270,8 +247,9 @@ class Image(Observable):
             return angles
 
     def watershedSegmentation(self):
-        if self.img is not None:
-            ret, thresh = cv2.threshold(self.img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            ret, thresh = cv2.threshold(self._img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
             # noise removal
             kernel = np.ones((3, 3), np.uint8)
@@ -298,39 +276,43 @@ class Image(Observable):
             markers[unknown == 255] = 0
 
             # convert single channel to three channels
-            temp = np.empty((self.img.shape[0], self.img.shape[1], 3), dtype=np.uint8)
-            temp[:, :, 0] = self.img
-            temp[:, :, 1] = self.img
-            temp[:, :, 2] = self.img
+            temp = np.empty((self._img.shape[0], self._img.shape[1], 3), dtype=np.uint8)
+            temp[:, :, 0] = self._img
+            temp[:, :, 1] = self._img
+            temp[:, :, 2] = self._img
 
-            # Problem: cv2.watershed expects 3 channel input. self.img has to be converted first.
+            # Problem: cv2.watershed expects 3 channel input. self._img has to be converted first.
             markers = cv2.watershed(temp, markers)
             temp[markers == -1] = 255
 
-            self.img = cv2.cvtColor(temp, cv2.COLOR_RGB2GRAY)
+            self._img = cv2.cvtColor(temp, cv2.COLOR_RGB2GRAY)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def contours(self):
-        if self.img is not None:
-            ret, thresh = cv2.threshold(self.img, 127, 255, 0)
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
+            ret, thresh = cv2.threshold(self._img, 127, 255, 0)
             im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
             cnt = contours[0]
             (x, y), (MA, ma), angle = cv2.fitEllipse(cnt)
             print(angle)
+            self.imgHistory.redo.clear()
 
     def topHatTransformation(self):
-        if self.img is not None:
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
             kernel = np.ones((5, 5), np.uint8)
-            self.img = cv2.morphologyEx(self.img, cv2.MORPH_TOPHAT, kernel)
+            self._img = cv2.morphologyEx(self._img, cv2.MORPH_TOPHAT, kernel)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
     def dilation(self):
-        if self.img is not None:
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
             kernel = np.ones((5, 5), np.uint8)
-            self.img = cv2.dilate(self.img, kernel, iterations=1)
+            self._img = cv2.dilate(self._img, kernel, iterations=1)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
@@ -338,8 +320,8 @@ class Image(Observable):
         """ Creates a skeleton of the image with the implementation of Zhang Suen.
             The Image has to be binary.
         """
-        if self.img is not None:
-            #self.img = self.img
+        if self._img is not None:
+            self.imgHistory.undo.append(np.copy(self._img))
 
             # Convert from OpenCV format to scikit-image format.
             self.convertFromOpenCVtoScikitImage()
@@ -365,25 +347,25 @@ class Image(Observable):
     def getPorosity(self):
         """ Returns the ratio of black pixels to the overall pixel count.
         """
-        if self.img is not None:
-            blackPixelCount = (self.img == 0).sum()
-            totalPixelCount = (self.img.shape[0] * self.img.shape[1])
+        if self._img is not None:
+            blackPixelCount = (self._img == 0).sum()
+            totalPixelCount = (self._img.shape[0] * self._img.shape[1])
             porosity = blackPixelCount / totalPixelCount
             return porosity
 
-    def getDiameters(self):
+    def getDiameters(self, min_diameter=0):
         """ Returns a numpy array with all measured diameters.
         """
-        if self.img is not None:
+        if self._img is not None:
             start_time = time.time() # For performance measure. Can be deleted later
             diameters = np.array([]) # return value. Array of all measured diameters.
 
             # Find all rows with a least one white pixel in it
-            relevantRows = np.unique(np.where(self.img == 255)[0])
+            relevantRows = np.unique(np.where(self._img == 255)[0])
 
             for currentRow in relevantRows:
                 # Extract the pixel values of the current row.
-                row = self.img[currentRow, :]
+                row = self._img[currentRow, :]
 
                 rowHasOnlyWhiteValues = np.all(row == 255)
 
@@ -426,7 +408,7 @@ class Image(Observable):
 
                 # Find the distances in vertical direction.
                 for start, distance in distances:
-                    column = self.img[:, int(start + distance / 2)]
+                    column = self._img[:, int(start + distance / 2)]
                     length = 0
 
                     reachedEdgeBottom = False
@@ -449,9 +431,11 @@ class Image(Observable):
                             reachedEdgeTop = True
 
                     if reachedEdgeTop and not rowHasOnlyWhiteValues:
-                        diameters = np.append(diameters, distance)
+                        if distance >= min_diameter:
+                            diameters = np.append(diameters, distance)
                     elif rowHasOnlyWhiteValues and not reachedEdgeTop:
-                        diameters = np.append(diameters, length + lengthToBottom - 1)
+                        if (length + lengthToBottom - 1) >= min_diameter:
+                            diameters = np.append(diameters, length + lengthToBottom - 1)
                     elif reachedEdgeTop and rowHasOnlyWhiteValues:
                         # if there are only white values in horizontal and vertical direction,
                         # there cannot determine the actual diameter of the fiber. Therefore pass
@@ -459,7 +443,8 @@ class Image(Observable):
                     else:
                         alpha = np.arctan(distance / (2 * length))
                         d = distance * np.cos(alpha)
-                        diameters = np.append(diameters, d)
+                        if d >= min_diameter:
+                            diameters = np.append(diameters, d)
 
             print("Execution time: " + str(time.time() - start_time))
 
@@ -470,11 +455,17 @@ class Image(Observable):
             return diameters
 
     def exportDiametersToCSV(self, filePath):
-        if self.img is not None:
+        if self._img is not None:
             if len(self._diameters) > 0:
                 np.savetxt(filePath, self._diameters[None, :], delimiter="\r\n", fmt="%.0f", header="Diameter")
 
     def exportAnglesToCSV(self, filePath):
-        if self.img is not None:
+        if self._img is not None:
             if len(self._angles) > 0:
                 np.savetxt(filePath, self._angles[None, :], delimiter="\r\n", fmt="%.0f", header="Angles")
+
+    def getScaleUnit(self):
+        if self.scale == 0:
+            return "pixel"
+        else:
+            return "um"

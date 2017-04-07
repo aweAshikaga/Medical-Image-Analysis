@@ -182,6 +182,11 @@ class ViewController(object):
 
                         self.update()
 
+                    self._initialAreaPoint = (-1, -1)
+                    self._endAreaPoint = (-1, -1)
+
+                    self.update()
+
                 if self._isDefiningArea:
                     self.drawRectOnLabel(pixmapInitialAreaPoint, pixmapEndAreaPoint)
                     self._isDefiningArea = False
@@ -338,46 +343,43 @@ class ViewController(object):
                 dialog.exec_()
 
                 if dialog.result() == 1:
-                                threshold = dialog.doubleSpinBoxThreshold.value()
-                                maxLines = dialog.spinBoxMaxLines.value()
+                    threshold = dialog.doubleSpinBoxThreshold.value()
+                    maxLines = dialog.spinBoxMaxLines.value()
 
-                                if maxLines == 0:
-                                    maxLines = np.inf
+                    if maxLines == 0:
+                        maxLines = np.inf
 
-                                angles = self.currentImageObject.houghLines2(threshold, maxLines)
-                                #np.histogram(angles)
-                                weights = np.ones_like(angles) / len(angles)
-                                plt.style.use("ggplot")
+                    angles = self.currentImageObject.houghLines2(threshold, maxLines)
 
-                                plt.hist(angles, bins=60, range=(- 90, 90), weights=weights, rwidth=0.8)
-                                plt.xlabel("Orientation in degrees")
-                                plt.ylabel("Frequency")
-                                plt.xticks([x for x in range(-90, 90+1, 30)])
-                                plt.title("Fiber Orientation")
-                                formatter = FuncFormatter(self.toPercent)
-                                plt.gca().yaxis.set_major_formatter(formatter)
-
-                                plt.show()
-
-    def toPercent(self, y, position):
-        s = str(100 * y)
-
-        return s + '%'
+                    plt.style.use("ggplot")
+                    plt.hist(angles, bins=60, range=(- 90, 90), rwidth=0.8)
+                    plt.xlabel("Orientation in degrees")
+                    plt.ylabel("Frequency")
+                    plt.xticks([x for x in range(-90, 90+1, 30)])
+                    plt.title("Fiber Orientation")
+                    plt.show()
 
     def findDiameters(self):
         if self.currentImageObject:
+            msgbox = QMessageBox()
+            msgbox.setIcon(QMessageBox.Information)
+            msgbox.setWindowTitle("Medical Image Analysis")
             if not self.currentImageObject.isBinary():
-                msgbox = QMessageBox()
-                msgbox.setIcon(QMessageBox.Information)
-                msgbox.setWindowTitle("Medical Image Analysis")
                 msgbox.setText("The image must be binary to perform diameter analysis.")
                 msgbox.exec_()
             else:
-                diameter = self.currentImageObject.getDiameters()
-                print(sum(diameter))
-                #np.histogram(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
-                weights = np.ones_like(diameter) / len(diameter)
-                print(type(weights))
+                minDiameter, ok = QInputDialog.getDouble(self.mainWindow, 'Diameter Analysis', 'Ignore all diameters smaller than:')
+
+                if not ok:
+                    return 0
+
+                diameter = self.currentImageObject.getDiameters(min_diameter=minDiameter)
+
+                if len(diameter) == 0:
+                    msgbox.setText("No diameters found with the given parameters.")
+                    msgbox.exec_()
+                    return 0
+
                 a = plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
                 maximum = max(a[0])
 
@@ -388,19 +390,33 @@ class ViewController(object):
                         right_value = x
                         break
 
-                print(maximum)
-                print(right_value)
                 plt.clf()
                 plt.style.use("ggplot")
-                #plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter)) + 1), rwidth=0.8)
-                #plt.show()
-                plt.clf()
-                #plt.hist(diameter, bins="doane", range=(0, right_value), rwidth=0.8)
-                plt.hist(diameter, bins="doane", range=(0, right_value+5), rwidth=0.8)
+                plt.figure(1)
+                plt.subplot(211)
+                plt.hist(diameter, bins=20, range=(0, right_value+5), rwidth=0.8)
 
-                plt.xlabel("Fiber diameter")
+                plt.xlabel("Fiber diameter in " + self.currentImageObject.getScaleUnit())
                 plt.ylabel("Frequency")
+
+                plt.subplot(212)
+                bp = plt.boxplot(diameter, patch_artist=True, labels=[''], showfliers=False)
+                for median in bp["medians"]:
+                    median.set(color="#000000", linewidth=1.0, )
+
+                plt.ylabel("Fiber diameter in " + self.currentImageObject.getScaleUnit())
+
+                plt.tight_layout()
                 plt.show()
+
+                #Calc median:
+                median = np.median(diameter)
+                firstQuantile = np.percentile(diameter, 25)
+                thirdQuantile = np.percentile(diameter, 75)
+
+                print("Median: " + str(median))
+                print("1. Quantile: " + str(firstQuantile))
+                print("3. Quantile: " + str(thirdQuantile))
 
     def addContrast(self):
         if self.currentImageObject:
