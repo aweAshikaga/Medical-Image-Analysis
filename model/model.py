@@ -423,10 +423,8 @@ class Image(Observable):
                     if reachedEdgeBottom or rowHasOnlyWhiteValues:
                         lengthToBottom = length
                         blackValues = np.where(column[0:currentRow] == 0)[0]
-                        print(blackValues)
                         if blackValues.size > 0:
                             length = currentRow - max(blackValues)
-                            print(length)
                         else:
                             reachedEdgeTop = True
 

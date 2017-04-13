@@ -380,6 +380,11 @@ class ViewController(object):
                     msgbox.exec_()
                     return 0
 
+                # Calc median:
+                median_value = np.median(diameter)
+                firstQuartile = np.percentile(diameter, 25)
+                thirdQuartile = np.percentile(diameter, 75)
+
                 a = plt.hist(diameter, bins=int(max(diameter))+1, range=(0, int(max(diameter))+1))
                 maximum = max(a[0])
 
@@ -405,18 +410,10 @@ class ViewController(object):
                     median.set(color="#000000", linewidth=1.0, )
 
                 plt.ylabel("Fiber diameter in " + self.currentImageObject.getScaleUnit())
+                plt.title(r"Q1: %.2f, $\tilde{x}$: %.2f, Q3: %.2f" % (firstQuartile, median_value, thirdQuartile))
 
                 plt.tight_layout()
                 plt.show()
-
-                #Calc median:
-                median = np.median(diameter)
-                firstQuantile = np.percentile(diameter, 25)
-                thirdQuantile = np.percentile(diameter, 75)
-
-                print("Median: " + str(median))
-                print("1. Quantile: " + str(firstQuantile))
-                print("3. Quantile: " + str(thirdQuantile))
 
     def addContrast(self):
         if self.currentImageObject:
