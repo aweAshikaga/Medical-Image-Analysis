@@ -395,22 +395,24 @@ class ViewController(object):
                         right_value = x
                         break
 
+                unit = self.currentImageObject.getScaleUnit()
                 plt.clf()
                 plt.style.use("ggplot")
                 plt.figure(1)
                 plt.subplot(211)
                 plt.hist(diameter, bins=20, range=(0, right_value+5), rwidth=0.8)
 
-                plt.xlabel("Fiber diameter in " + self.currentImageObject.getScaleUnit())
+                plt.xlabel("Fiber diameter in " + unit)
                 plt.ylabel("Frequency")
+                plt.title("Fiber diameters")
 
                 plt.subplot(212)
                 bp = plt.boxplot(diameter, patch_artist=True, labels=[''], showfliers=False)
                 for median in bp["medians"]:
                     median.set(color="#000000", linewidth=1.0, )
 
-                plt.ylabel("Fiber diameter in " + self.currentImageObject.getScaleUnit())
-                plt.title(r"Q1: %.2f, $\tilde{x}$: %.2f, Q3: %.2f" % (firstQuartile, median_value, thirdQuartile))
+                plt.ylabel("Fiber diameter in " + unit)
+                plt.title(r"Q1: %.2f %s, $\tilde{x}$: %.2f %s, Q3: %.2f %s" % (firstQuartile, unit, median_value, unit, thirdQuartile, unit))
 
                 plt.tight_layout()
                 plt.show()
