@@ -209,6 +209,7 @@
     <addaction name="actionRedo"/>
     <addaction name="actionZoomIn"/>
     <addaction name="actionZoomOut"/>
+    <addaction name="actionReset_zoom"/>
     <addaction name="actionDefineScale"/>
     <addaction name="actionDefineAreas"/>
    </widget>
@@ -237,7 +238,7 @@
     <addaction name="actionContrast"/>
     <addaction name="actionSharpen"/>
     <addaction name="actionWatershed_Transformation"/>
-    <addaction name="actionTest"/>
+    <addaction name="actionEdgeDetection"/>
     <addaction name="menuMorphological_Transformation"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis">
@@ -392,9 +393,9 @@
     <string>Watershed Transformation</string>
    </property>
   </action>
-  <action name="actionTest">
+  <action name="actionEdgeDetection">
    <property name="text">
-    <string>test</string>
+    <string>Edge detection</string>
    </property>
   </action>
   <action name="actionTop_Hat_Transformation">
@@ -420,6 +421,11 @@
   <action name="actionExport_orientation_angles">
    <property name="text">
     <string>Export orientation angles</string>
+   </property>
+  </action>
+  <action name="actionReset_zoom">
+   <property name="text">
+    <string>Reset zoom</string>
    </property>
   </action>
  </widget>

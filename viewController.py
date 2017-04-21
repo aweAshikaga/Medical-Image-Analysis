@@ -32,6 +32,7 @@ class ViewController(object):
         self.mainWindow.actionContrast.triggered.connect(self.addContrast)
         self.mainWindow.actionZoomIn.triggered.connect(self.zoomIn)
         self.mainWindow.actionZoomOut.triggered.connect(self.zoomOut)
+        self.mainWindow.actionReset_zoom.triggered.connect(self.resetZoom)
         self.mainWindow.actionRedo.triggered.connect(self.redo)
         self.mainWindow.actionUndo.triggered.connect(self.undo)
         self.mainWindow.tabBar.currentChanged.connect(self.update)
@@ -47,7 +48,7 @@ class ViewController(object):
         self.mainWindow.actionDilation.triggered.connect(self.addDilation)
         self.mainWindow.actionSkeletonization.triggered.connect(self.addSkeletonization)
         self.mainWindow.actionPorosity.triggered.connect(self.checkPorosity)
-        self.mainWindow.actionTest.triggered.connect(self.addEdges)
+        self.mainWindow.actionEdgeDetection.triggered.connect(self.addEdges)
         self.mainWindow.actionDefineAreas.triggered.connect(self.grabArea)
         self.mainWindow.actionDefineScale.triggered.connect(self.grabScale)
         self.mainWindow.actionFiberDiameter.triggered.connect(self.findDiameters)
@@ -368,7 +369,7 @@ class ViewController(object):
                 msgbox.setText("The image must be binary to perform diameter analysis.")
                 msgbox.exec_()
             else:
-                minDiameter, ok = QInputDialog.getDouble(self.mainWindow, 'Diameter Analysis', 'Ignore all diameters smaller than:')
+                minDiameter, ok = QInputDialog.getDouble(self.mainWindow, 'Diameter Analysis', 'Ignore all diameters smaller than (in %s):' % (self.currentImageObject.getScaleUnit()))
 
                 if not ok:
                     return 0
@@ -558,6 +559,12 @@ class ViewController(object):
         """
         if self.currentImageObject:
             self.currentImageObject.zoomFactor -= 0.25
+
+    def resetZoom(self):
+        """ Reset the zoom factor to 100%
+        """
+        if self.currentImageObject:
+            self.currentImageObject.zoomFactor = 1
 
     def addSharpening(self):
         """ Sharpen the current image.

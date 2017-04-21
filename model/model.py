@@ -213,10 +213,10 @@ class Image(Observable):
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
-    def edges(self):
+    def edges(self, lower_threshold=85):
         if self._img is not None:
             self.imgHistory.undo.append(np.copy(self._img))
-            self._img = cv2.Canny(self._img, 50, 150, apertureSize=3)
+            self._img = cv2.Canny(self._img, lower_threshold, lower_threshold*3, apertureSize=3)
             self.update_observers(self)
             self.imgHistory.redo.clear()
 
@@ -357,7 +357,11 @@ class Image(Observable):
         """ Returns a numpy array with all measured diameters.
         """
         if self._img is not None:
-            start_time = time.time() # For performance measure. Can be deleted later
+            if self.scale == 0:
+                scale = 1
+            else:
+                scale = self.scale
+
             diameters = np.array([]) # return value. Array of all measured diameters.
 
             # Find all rows with a least one white pixel in it
@@ -429,10 +433,10 @@ class Image(Observable):
                             reachedEdgeTop = True
 
                     if reachedEdgeTop and not rowHasOnlyWhiteValues:
-                        if distance >= min_diameter:
+                        if distance*scale >= min_diameter:
                             diameters = np.append(diameters, distance)
                     elif rowHasOnlyWhiteValues and not reachedEdgeTop:
-                        if (length + lengthToBottom - 1) >= min_diameter:
+                        if (length + lengthToBottom - 1)*scale >= min_diameter:
                             diameters = np.append(diameters, length + lengthToBottom - 1)
                     elif reachedEdgeTop and rowHasOnlyWhiteValues:
                         # if there are only white values in horizontal and vertical direction,
@@ -441,10 +445,8 @@ class Image(Observable):
                     else:
                         alpha = np.arctan(distance / (2 * length))
                         d = distance * np.cos(alpha)
-                        if d >= min_diameter:
+                        if d*scale >= min_diameter:
                             diameters = np.append(diameters, d)
-
-            print("Execution time: " + str(time.time() - start_time))
 
             if self.scale != 0:
                 diameters = np.multiply(diameters, self.scale)
