@@ -243,6 +243,12 @@ class Image(Observable):
 
             self.update_observers(self)
             self.imgHistory.redo.clear()
+
+            # Reformat to 180 degree
+            angles = angles + 90
+            for i, x in enumerate(angles):
+                angles[i] = 180 - x
+
             self._angles = angles
             return angles
 
@@ -297,7 +303,6 @@ class Image(Observable):
 
             cnt = contours[0]
             (x, y), (MA, ma), angle = cv2.fitEllipse(cnt)
-            print(angle)
             self.imgHistory.redo.clear()
 
     def topHatTransformation(self):
@@ -457,15 +462,15 @@ class Image(Observable):
     def exportDiametersToCSV(self, filePath):
         if self._img is not None:
             if len(self._diameters) > 0:
-                np.savetxt(filePath, self._diameters[None, :], delimiter="\r\n", fmt="%.0f", header="Diameter")
+                np.savetxt(filePath, self._diameters[None, :], delimiter="\r\n", fmt="%.2f", header="Diameter")
 
     def exportAnglesToCSV(self, filePath):
         if self._img is not None:
             if len(self._angles) > 0:
-                np.savetxt(filePath, self._angles[None, :], delimiter="\r\n", fmt="%.0f", header="Angles")
+                np.savetxt(filePath, self._angles[None, :], delimiter="\r\n", fmt="%.2f", header="Angles")
 
     def getScaleUnit(self):
         if self.scale == 0:
             return "pixel"
         else:
-            return "um"
+            return u"\u00B5m"

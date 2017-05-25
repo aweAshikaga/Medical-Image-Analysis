@@ -64,11 +64,6 @@ class ViewController(object):
         if self.currentImageObject:
             isBinary = self.currentImageObject.isBinary()
 
-            if isBinary:
-                print("Yes")
-            else:
-                print("No")
-
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.cancelDefineAreaOrScale()
@@ -155,7 +150,6 @@ class ViewController(object):
                     um, ok = QInputDialog.getInt(self.mainWindow, "Scale", "um: ", 100)
 
                     if ok:
-                        print("ok")
                         initPoint = self.convertZoomedPointToOriginalPoint(pixmapInitialAreaPoint)
                         endPoint = self.convertZoomedPointToOriginalPoint(pixmapEndAreaPoint)
                         startX = int(initPoint[0])
@@ -290,7 +284,7 @@ class ViewController(object):
             porosity = self.currentImageObject.getPorosity() * 100
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Information)
-            msgbox.setWindowTitle("Medical Image Analysis")
+            msgbox.setWindowTitle("Python Fiber Image Analyzer")
             msgbox.setText("The porosity is: {0:.2f} %".format(porosity))
             msgbox.exec_()
 
@@ -301,7 +295,7 @@ class ViewController(object):
             if not self.currentImageObject.isBinary():
                 msgbox = QMessageBox()
                 msgbox.setIcon(QMessageBox.Information)
-                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setWindowTitle("Python Fiber Image Analyzer")
                 msgbox.setText("The image must be binary to perform diameter analysis.")
                 msgbox.exec_()
             else:
@@ -336,7 +330,7 @@ class ViewController(object):
             if not self.currentImageObject.isBinary():
                 msgbox = QMessageBox()
                 msgbox.setIcon(QMessageBox.Information)
-                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setWindowTitle("Python Fiber Image Analyzer")
                 msgbox.setText("The image must be binary to perform orientation analysis.")
                 msgbox.exec_()
             else:
@@ -353,10 +347,12 @@ class ViewController(object):
                     angles = self.currentImageObject.houghLines2(threshold, maxLines)
 
                     plt.style.use("ggplot")
-                    plt.hist(angles, bins=60, range=(- 90, 90), rwidth=0.8)
+                    #plt.hist(angles, bins=60, range=(- 90, 90), rwidth=0.8)
+                    plt.hist(angles, bins=180, range=(0, 180), rwidth=0.8)
                     plt.xlabel("Orientation in degrees")
                     plt.ylabel("Frequency")
-                    plt.xticks([x for x in range(-90, 90+1, 30)])
+                    #plt.xticks([x for x in range(-90, 90+1, 30)])
+                    plt.xticks([x for x in range(0, 180+1, 30)])
                     plt.title("Fiber Orientation")
                     plt.show()
 
@@ -364,7 +360,7 @@ class ViewController(object):
         if self.currentImageObject:
             msgbox = QMessageBox()
             msgbox.setIcon(QMessageBox.Information)
-            msgbox.setWindowTitle("Medical Image Analysis")
+            msgbox.setWindowTitle("Python Fiber Image Analyzer")
             if not self.currentImageObject.isBinary():
                 msgbox.setText("The image must be binary to perform diameter analysis.")
                 msgbox.exec_()
@@ -401,7 +397,8 @@ class ViewController(object):
                 plt.style.use("ggplot")
                 plt.figure(1)
                 plt.subplot(211)
-                plt.hist(diameter, bins=20, range=(0, right_value+5), rwidth=0.8)
+
+                plt.hist(diameter, bins='doane', range=(0, right_value+1), rwidth=0.8)
 
                 plt.xlabel("Fiber diameter in " + unit)
                 plt.ylabel("Frequency")
@@ -428,7 +425,6 @@ class ViewController(object):
                     self.currentImageObject.addContrastCLAHE()
                 elif dialog.radioBtnManual.isChecked():
                     contrastValue = dialog.doubleSpinBox.value()
-                    print(contrastValue)
                     self.currentImageObject.addContrastCustom(contrastValue)
 
     def addSmoothing(self):
@@ -492,6 +488,7 @@ class ViewController(object):
             # Open the selected image and remember the reference to its image object.
             newImage.openFile(filePath)
 
+
     def saveImage(self):
         """ Open a file dialog and save the current image to the chosen file path.
         """
@@ -512,7 +509,7 @@ class ViewController(object):
             if len(self.currentImageObject._diameters) == 0:
                 msgbox = QMessageBox()
                 msgbox.setIcon(QMessageBox.Information)
-                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setWindowTitle("Python Fiber Image Analyzer")
                 msgbox.setText("Diameter analysis has not been executed yet for this image.")
                 msgbox.exec_()
             else:
@@ -527,7 +524,7 @@ class ViewController(object):
             if len(self.currentImageObject._angles) == 0:
                 msgbox = QMessageBox()
                 msgbox.setIcon(QMessageBox.Information)
-                msgbox.setWindowTitle("Medical Image Analysis")
+                msgbox.setWindowTitle("Python Fiber Image Analyzer")
                 msgbox.setText("Orientation analysis has not been executed yet for this image.")
                 msgbox.exec_()
             else:
@@ -592,7 +589,7 @@ class ViewController(object):
             self.mainWindow.lblHeight.setText(str(self.currentImageObject.getImageDimensions()[0]))
             self.mainWindow.lblWidth.setText(str(self.currentImageObject.getImageDimensions()[1]))
             self.mainWindow.lblZoomFactor.setText(str(int(self.currentImageObject.zoomFactor * 100)))
-            self.mainWindow.lblScale.setText("{0:.2f}".format(self.currentImageObject.scale))
+            self.mainWindow.lblScale.setText("{0:.3f}".format(self.currentImageObject.scale))
 
             isBinary = self.currentImageObject.isBinary()
             if isBinary:

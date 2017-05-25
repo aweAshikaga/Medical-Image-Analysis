@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Medical Image Analysis</string>
+   <string>Orientation Analysis</string>
   </property>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">

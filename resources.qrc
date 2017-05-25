@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>view/res/icons/document-save.ico</file>
     <file>view/res/icons/document-open.ico</file>
     <file>view/res/icons/edit-redo.ico</file>
     <file>view/res/icons/edit-undo.ico</file>

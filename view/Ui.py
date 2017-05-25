@@ -24,6 +24,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self._actions.append(self.actionZoomIn)
         self._actions.append(self.actionDefineAreas)
         self._actions.append(self.actionDefineScale)
+        self._actions.append(self.actionSave)
 
         # Processing Menu
         self._actions.append(self.actionSmoothingFilter)
@@ -82,13 +83,13 @@ class SmoothingDialog(QDialog, Ui_SmoothingDialog):
         if (self.radioBtnMedian.isChecked() or self.radioBtnGaussian.isChecked()) and self.spinBoxKernelSize.value() % 2 == 0:
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
-            msgBox.setWindowTitle("Medical Image Analysis")
+            msgBox.setWindowTitle("Python Fiber Image Analyzer")
             msgBox.setText("The kernel size for the median filter must be a positive, odd whole number")
             msgBox.exec_()
         elif self.spinBoxKernelSize.value() < 1:
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
-            msgBox.setWindowTitle("Medical Image Analysis")
+            msgBox.setWindowTitle("Python Fiber Image Analyzer")
             msgBox.setText("The kernel size for the median filter must be a positive whole number")
             msgBox.exec_()
         else:

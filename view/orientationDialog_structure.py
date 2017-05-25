@@ -42,7 +42,7 @@ class Ui_orientationDialog(object):
 
     def retranslateUi(self, orientationDialog):
         _translate = QtCore.QCoreApplication.translate
-        orientationDialog.setWindowTitle(_translate("orientationDialog", "Medical Image Analysis"))
+        orientationDialog.setWindowTitle(_translate("orientationDialog", "Orientation Analysis"))
         self.lblThresholdText.setText(_translate("orientationDialog", "Threshold:"))
         self.lblLineCount.setText(_translate("orientationDialog", "<html><head/><body><p>Maximum number of lines:</p><p>(0 for infinity)</p></body></html>"))
 
