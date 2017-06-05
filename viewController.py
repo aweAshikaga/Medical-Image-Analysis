@@ -464,7 +464,7 @@ class ViewController(object):
     def openFile(self):
         """ Open a file dialog and open the chosen file path.
         """
-        filePath = QFileDialog.getOpenFileName(self.mainWindow, 'Open file', '/home', '*.jpg; *.png; *.tiff; *.tif')[0]
+        filePath = QFileDialog.getOpenFileName(self.mainWindow, 'Open file', filter='*.jpg; *.png; *.tiff; *.tif')[0]
 
         if filePath:
             # Get the filename from the whole file path
@@ -493,7 +493,7 @@ class ViewController(object):
         """ Open a file dialog and save the current image to the chosen file path.
         """
         if self.currentImageObject:
-            filePath = QFileDialog.getSaveFileName(self.mainWindow, "Save file", "/home", filter="*.jpg;;*.png;;*.tiff")[0]
+            filePath = QFileDialog.getSaveFileName(self.mainWindow, "Save file", filter="*.png;;*.jpg;;*.tiff")[0]
 
             if filePath:
                 # Change tab text to new filename.
@@ -513,7 +513,7 @@ class ViewController(object):
                 msgbox.setText("Diameter analysis has not been executed yet for this image.")
                 msgbox.exec_()
             else:
-                filePath = QFileDialog.getSaveFileName(self.mainWindow, "Export Diameter Data", "/home", filter="*.csv")[0]
+                filePath = QFileDialog.getSaveFileName(self.mainWindow, "Export Diameter Data", filter="*.csv")[0]
 
                 if filePath:
                     self.currentImageObject.exportDiametersToCSV(filePath)
@@ -528,7 +528,7 @@ class ViewController(object):
                 msgbox.setText("Orientation analysis has not been executed yet for this image.")
                 msgbox.exec_()
             else:
-                filePath = QFileDialog.getSaveFileName(self.mainWindow, "Export Orientation Angles Data", "/home", filter="*.csv")[0]
+                filePath = QFileDialog.getSaveFileName(self.mainWindow, "Export Orientation Angles Data", filter="*.csv")[0]
 
                 if filePath:
                     self.currentImageObject.exportAnglesToCSV(filePath)

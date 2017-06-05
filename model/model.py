@@ -462,12 +462,26 @@ class Image(Observable):
     def exportDiametersToCSV(self, filePath):
         if self._img is not None:
             if len(self._diameters) > 0:
-                np.savetxt(filePath, self._diameters[None, :], delimiter="\r\n", fmt="%.2f", header="Diameter")
+                # first conversion due to german decimal separator notation
+                string_list = ["%.2f" % diameter for diameter in self._diameters]
+                converted_list = [diameter.replace(".", ",") for diameter in string_list]
+
+                np.savetxt(filePath, converted_list, delimiter="\r\n", fmt="%s", header="Diameter")
+
+                # For later usage: The line below exports the list with a dot as decimal separator
+                #np.savetxt(filePath, self._diameters[None, :], delimiter="\r\n", fmt="%.2f", header="Diameter")
 
     def exportAnglesToCSV(self, filePath):
         if self._img is not None:
             if len(self._angles) > 0:
-                np.savetxt(filePath, self._angles[None, :], delimiter="\r\n", fmt="%.2f", header="Angles")
+                # first conversion due to german decimal separator notation
+                string_list = ["%.2f" % angle for angle in self._angles]
+                converted_list = [angle.replace(".", ",") for angle in string_list]
+
+                np.savetxt(filePath, converted_list, delimiter="\r\n", fmt="%s", header="Angles")
+
+                # For later usage: The line below exports the list with a dot as decimal separator
+                #np.savetxt(filePath, self._angles[None, :], delimiter="\r\n", fmt="%.2f", header="Angles")
 
     def getScaleUnit(self):
         if self.scale == 0:
